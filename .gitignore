@@ -1,0 +1,35 @@
+# Environment and local configuration
+.env
+.env.*
+!.env.example
+
+# Python caches and virtual environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+
+# Coverage and build output
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+build/
+dist/
+*.egg-info/
+
+# Local runtime output
+/.artifacts/
+/artifacts/
+/reports/
+!reports/
+/reports/*
+!reports/.gitkeep
+
+# Editor and OS noise
+.DS_Store
+.idea/
+.vscode/

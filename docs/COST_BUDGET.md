@@ -16,7 +16,7 @@ Last updated: 2026-06-11
 | Per project / month | unknown | monthly | approval required before recurring live LLM usage |
 | Per agent / workflow | max 500 model calls for the v1 proof run when live mode is approved | per run | approval required for fan-out increase |
 
-Until T12 adds telemetry, live LLM thresholds are manual-review boundaries and runtime configuration gates. CI cost enforcement is not active before project-owned telemetry exists.
+T12 adds project-owned telemetry records and rollup generation. Live LLM execution still requires explicit approval and configuration before any provider call.
 
 ---
 
@@ -45,7 +45,7 @@ Every LLM call or agent run must be attributable to:
 |----------|---------------------|--------------------------|------------------|---------------------|
 | Runtime control plane | no model | never without ADR and human approval | deterministic code | policy/state tests pass |
 | Stub benchmark jobs | deterministic fixture | not applicable | deterministic fixture | zero provider calls and zero cost |
-| Optional live summarization/classification demo | small or standard structured-output model | marked job requires stronger quality and operator approves budget | stub job or smaller model | benchmark stays below configured budget and task-specific quality test passes |
+| Optional live summarization/classification sample job | small or standard structured-output model | marked job requires stronger quality and operator approves budget | stub job or smaller model | benchmark stays below configured budget and task-specific quality test passes |
 
 ---
 
@@ -80,9 +80,9 @@ Every LLM call or agent run must be attributable to:
 
 ## Telemetry
 
-- Telemetry file after T12: `docs/ai_cost_telemetry.jsonl`
-- Entry schema after T12: project-owned schema in `src/agent_runtime_grid/cost/telemetry.py`
-- Rollup command after T12:
+- Telemetry file: `docs/ai_cost_telemetry.jsonl`
+- Entry schema: project-owned schema in `src/agent_runtime_grid/cost/telemetry.py`
+- Rollup command:
 
 ```bash
 python -m agent_runtime_grid.cli cost rollup \

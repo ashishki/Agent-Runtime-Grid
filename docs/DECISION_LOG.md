@@ -25,11 +25,12 @@ This file is not the source of truth. If an entry conflicts with a canonical doc
 
 | ID | Date | Status | Decision | Why it matters | Canonical source | Supersedes |
 |----|------|--------|----------|----------------|------------------|------------|
-| D-001 | 2026-06-11 | Active | Use Standard mode. | The project is infrastructure with queues, workers, retries, persistence, cost, and evidence needs, but v1 is local/demo and not compliance-heavy or privileged. | `docs/ARCHITECTURE.md#solution-shape` | none |
+| D-001 | 2026-06-11 | Active | Use Standard mode. | The project is infrastructure with queues, workers, retries, persistence, cost, and evidence needs, but v1 is local-only and not compliance-heavy or privileged. | `docs/ARCHITECTURE.md#solution-shape` | none |
 | D-002 | 2026-06-11 | Active | Use T1 Docker Compose runtime. | Local containers are needed for API, worker, Postgres, Redis, Prometheus, and Grafana, while T2/T3 privileges are out of scope. | `docs/ARCHITECTURE.md#runtime-and-isolation-model` | none |
 | D-003 | 2026-06-11 | Active | Keep runtime control plane deterministic. | Scheduling, retries, idempotency, budget, and state transitions must be reproducible and testable. | `docs/ARCHITECTURE.md#deterministic-vs-llm-owned-subproblems` | none |
-| D-004 | 2026-06-11 | Active | Default benchmark mode uses stub jobs with $0 model cost. | The reliability proof must be runnable by reviewers without paid LLM credentials. | `docs/COST_BUDGET.md#budget-scope` | none |
+| D-004 | 2026-06-11 | Active | Default benchmark mode uses stub jobs with $0 model cost. | The reliability proof must be runnable by operators without paid LLM credentials. | `docs/COST_BUDGET.md#budget-scope` | none |
 | D-005 | 2026-06-11 | Active | Capability profiles are OFF for v1. | RAG, Tool-Use, Agentic, Planning, and Compliance profile overhead is not justified for the deterministic control plane; future activation requires ADR and artifacts. | `docs/ARCHITECTURE.md#capability-profiles` | none |
+| D-006 | 2026-06-11 | Active | Use neutral operator/platform framing. | Documentation must describe the system as an operator-facing runtime, not as an external-evaluation artifact. | `docs/adr/0001-neutral-runtime-framing.md` | none |
 
 ---
 

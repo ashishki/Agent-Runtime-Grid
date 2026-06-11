@@ -4,7 +4,7 @@ Status: **IMMUTABLE** - changes to this document require an Architectural Decisi
 Version: 1.0
 Effective date: 2026-06-11
 
-Any agent or reviewer may cite this document as the authority on implementation rules. Any finding that this contract was violated is automatically P1 unless a stricter severity is stated.
+Any implementer or auditor may cite this document as the authority on implementation rules. Any finding that this contract was violated is automatically P1 unless a stricter severity is stated.
 
 ---
 
@@ -28,7 +28,7 @@ Any agent or reviewer may cite this document as the authority on implementation 
 
 - `GET /health` is intentionally public and must not reveal secrets or internal state.
 - All non-health API routes enforce local token authentication when `API_TOKEN` is configured.
-- If local demo mode disables auth, the app must bind only to localhost and tests must verify that boundary.
+- If local mode disables auth, the app must bind only to localhost and tests must verify that boundary.
 - New public routes require a comment citing the design decision.
 - Violation: automatic P1.
 
@@ -42,7 +42,7 @@ Any agent or reviewer may cite this document as the authority on implementation 
 
 ### PII and Sensitive Data Policy
 
-- v1 uses synthetic/demo data only.
+- v1 uses synthetic data only.
 - Do not log raw job payloads, provider API keys, GitHub tokens, API tokens, external credentials, or user-supplied secret-like fields.
 - Metrics labels and span attributes must use job IDs, run IDs, worker IDs, event classes, and hashes rather than raw payload content.
 - Violation: automatic P1 for secrets; P2 for non-secret payload leakage.

@@ -10,7 +10,7 @@ Status: Draft
 
 Agent Runtime Grid provides a local, queue-driven runtime for submitting and operating many synthetic AI or agent jobs under controlled concurrency and failure. v1 proves operational behavior: durable job lifecycle state, worker leasing, retries, idempotent finalization, cancellation, timeouts, artifacts, logs, cost attribution, metrics, traces, and benchmark evidence.
 
-The default demo path uses deterministic stub jobs so the full reliability benchmark can run without paid model calls. Optional live LLM jobs are gated by budget configuration and human approval.
+The default path uses deterministic stub jobs so the full reliability benchmark can run without paid model calls. Optional live LLM jobs are gated by budget configuration and human approval.
 
 ---
 
@@ -18,9 +18,9 @@ The default demo path uses deterministic stub jobs so the full reliability bench
 
 | Role | Needs |
 |------|-------|
-| AI engineer / portfolio owner | Submit batches, run failure-injection scenarios, inspect evidence, and produce a credible runtime report. |
+| AI engineer / platform operator | Submit batches, run failure-injection scenarios, inspect evidence, and produce a credible runtime report. |
 | Platform engineer | Inspect architecture, state transitions, idempotency behavior, worker isolation, metrics, and recovery semantics. |
-| Hiring reviewer | Run one command, observe concurrent job execution, and verify reports without needing paid LLM access. |
+| Technical operator | Run one command, observe concurrent job execution, and verify reports without needing paid LLM access. |
 | Future operator | Configure job types, budgets, worker counts, and external egress only within explicit approval boundaries. |
 
 ---
@@ -113,7 +113,7 @@ Acceptance criteria:
 2. Failure injection supports transient failure, permanent failure, timeout, cancellation, and duplicate submission scenarios.
 3. The benchmark report includes completion rate, duplicate-finalization count, retry count, timeout count, queue lag, p95 duration, failure classification, artifact completeness, and estimated cost.
 4. With a fixed seed, the benchmark produces the same number of injected failure cases across repeated runs.
-5. A reviewer can run the smoke benchmark locally without paid LLM credentials.
+5. An operator can run the smoke benchmark locally without paid LLM credentials.
 
 Out of scope:
 

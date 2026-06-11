@@ -10,7 +10,7 @@ Task state values: `planned`, `in_progress`, `blocked`, `done`.
 
 ## T01: Project Skeleton
 
-State: planned
+State: done
 Owner: codex
 Phase: 1
 Type: none
@@ -50,7 +50,7 @@ Context-Refs:
 
 ## T02: CI Setup
 
-State: planned
+State: done
 Owner: codex
 Phase: 1
 Type: none
@@ -79,7 +79,7 @@ Context-Refs:
 
 ## T03: Baseline API and Verification
 
-State: planned
+State: done
 Owner: codex
 Phase: 1
 Type: none
@@ -114,7 +114,7 @@ Context-Refs:
 
 ## T04: Job Domain Model and Persistence
 
-State: planned
+State: done
 Owner: codex
 Phase: 2
 Type: none
@@ -149,7 +149,7 @@ Context-Refs:
 
 ## T05: Queue Adapter
 
-State: planned
+State: done
 Owner: codex
 Phase: 2
 Type: none
@@ -182,7 +182,7 @@ Context-Refs:
 
 ## T06: Worker Lifecycle and State Transitions
 
-State: planned
+State: done
 Owner: codex
 Phase: 2
 Type: none
@@ -216,7 +216,7 @@ Context-Refs:
 
 ## T07: Idempotent Finalization and Duplicate Delivery Tests
 
-State: planned
+State: done
 Owner: codex
 Phase: 2
 Type: none
@@ -249,14 +249,14 @@ Context-Refs:
 
 ## T08: Artifact and Log Store
 
-State: planned
+State: done
 Owner: codex
 Phase: 2
 Type: none
 Depends-On: T06
 
 Objective: |
-  Add local artifact storage, artifact metadata hashing, structured job logs, and cleanup commands for local demo runs.
+  Add local artifact storage, artifact metadata hashing, structured job logs, and cleanup commands for local runs.
 
 Acceptance-Criteria:
   - id: AC-1
@@ -284,7 +284,7 @@ Context-Refs:
 
 ## T09: Timeout and Cancellation Handling
 
-State: planned
+State: done
 Owner: codex
 Phase: 2
 Type: none
@@ -317,7 +317,7 @@ Context-Refs:
 
 ## T10: Observability Metrics and Tracing
 
-State: planned
+State: done
 Owner: codex
 Phase: 3
 Type: none
@@ -350,9 +350,9 @@ Context-Refs:
 
 ---
 
-## T11: Failure Injection and Demo Jobs
+## T11: Failure Injection and Sample Jobs
 
-State: planned
+State: done
 Owner: codex
 Phase: 3
 Type: none
@@ -385,14 +385,14 @@ Context-Refs:
 
 ## T12: Cost Telemetry Adapter
 
-State: planned
+State: done
 Owner: codex
 Phase: 3
 Type: cost:telemetry
 Depends-On: T10, T11
 
 Objective: |
-  Add provider-neutral AI cost telemetry records and report generation for optional live LLM demo jobs while keeping stub mode at zero cost.
+  Add provider-neutral AI cost telemetry records and report generation for optional live LLM sample jobs while keeping stub mode at zero cost.
 
 Acceptance-Criteria:
   - id: AC-1
@@ -428,7 +428,7 @@ Context-Refs:
 
 ## T13: CLI and API Batch Workflow
 
-State: planned
+State: done
 Owner: codex
 Phase: 4
 Type: none
@@ -461,7 +461,7 @@ Context-Refs:
 
 ## T14: Load Test Harness and Reliability Reports
 
-State: planned
+State: done
 Owner: codex
 Phase: 4
 Type: none

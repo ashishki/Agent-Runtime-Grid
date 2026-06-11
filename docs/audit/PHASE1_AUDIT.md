@@ -79,4 +79,4 @@ test -d .git && echo GIT_REPO || echo NO_GIT_REPO
 
 ## Notes for Strategist
 
-Standard mode is proportionate for v1. Strict mode is not selected because the brief keeps v1 local/demo, synthetic-data only, non-compliance, non-privileged, and explicitly out of scope for arbitrary untrusted code execution. If future work enables privileged worker mutation, external side-effecting jobs, remote/cloud operation, or persistent autonomous runtimes, revisit mode and runtime tier through an ADR before implementation.
+Standard mode is proportionate for v1. Strict mode is not selected because the brief keeps v1 local-only, synthetic-data only, non-compliance, non-privileged, and explicitly out of scope for arbitrary untrusted code execution. If future work enables privileged worker mutation, external side-effecting jobs, remote/cloud operation, or persistent autonomous runtimes, revisit mode and runtime tier through an ADR before implementation.

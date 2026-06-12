@@ -1,7 +1,7 @@
 # Tasks - Agent Runtime Grid
 
 Version: 1.0
-Last updated: 2026-06-11
+Last updated: 2026-06-12
 Mode: Standard
 
 Task state values: `planned`, `in_progress`, `blocked`, `done`.
@@ -490,3 +490,455 @@ Files:
 Context-Refs:
   - docs/ARCHITECTURE.md#problem-fit-and-adoption-reality
   - docs/EVIDENCE_INDEX.md
+
+---
+
+## T15: Root README and Evidence Path
+
+State: done
+Owner: codex
+Phase: 5
+Type: docs
+Depends-On: T14
+
+Objective: |
+  Add the root operator documentation that explains what the runtime is, what it proves today, how to run it locally, where reports are written, and which limits are still explicit.
+
+Acceptance-Criteria:
+  - id: AC-1
+    description: "The root README explains the local-first T1 runtime, Redis Streams dispatch, Postgres-backed lifecycle, worker execution, idempotent finalization, reports, and known limits."
+    test: "rg -n \"local-first|T1 runtime|Redis Streams|Postgres|idempotent finalization|known limits\" README.md"
+  - id: AC-2
+    description: "README quickstart includes commands for dependency setup, local services, 100-job smoke run, 500-job reliability proof, and report inspection."
+    test: "rg -n \"100-job|500-job|smoke|reliability proof|reports\" README.md docs/EVIDENCE_INDEX.md"
+  - id: AC-3
+    description: "Known limits are documented without claiming Temporal, Ray, Kubernetes, production sandboxing, SaaS, or autonomous swarm replacement."
+    test: "rg -n \"Temporal|Ray|Kubernetes|production sandbox|SaaS|autonomous swarm\" docs/KNOWN_LIMITS.md README.md"
+
+Files:
+  - README.md
+  - docs/EVIDENCE_INDEX.md
+  - docs/ARCHITECTURE.md
+  - docs/KNOWN_LIMITS.md
+  - reports/README.md
+
+Context-Refs:
+  - docs/ARCHITECTURE.md#system-overview
+  - docs/ARCHITECTURE.md#non-goals
+  - docs/EVIDENCE_INDEX.md
+
+---
+
+## T16: Real Smoke Run Command
+
+State: done
+Owner: codex
+Phase: 5
+Type: benchmark
+Depends-On: T15
+
+Objective: |
+  Add a single local smoke command that starts from a clean local run state, submits 100 stub jobs, processes them through the queue and workers, verifies lifecycle expectations, and writes a report from actual runtime state.
+
+Acceptance-Criteria:
+  - id: AC-1
+    description: "`python -m agent_runtime_grid.cli smoke --jobs 100 --workers 4 --failure-rate 0 --mode stub --report reports/smoke.md` submits 100 jobs and processes them through Redis Streams and worker execution."
+    test: "python -m pytest tests/integration/test_smoke_command.py::test_smoke_command_processes_jobs_through_runtime -q"
+  - id: AC-2
+    description: "The smoke report is generated from actual Postgres job/event state and artifact metadata, not hardcoded lifecycle counts."
+    test: "python -m pytest tests/integration/test_smoke_command.py::test_smoke_report_uses_runtime_state -q"
+  - id: AC-3
+    description: "The command exits non-zero when submitted, terminal, duplicate-finalization, artifact-completeness, or cost expectations are violated."
+    test: "python -m pytest tests/integration/test_smoke_command.py::test_smoke_command_fails_on_lifecycle_mismatch -q"
+
+Files:
+  - src/agent_runtime_grid/cli/smoke.py
+  - src/agent_runtime_grid/cli/main.py
+  - src/agent_runtime_grid/worker/loop.py
+  - src/agent_runtime_grid/cli/benchmark.py
+  - tests/integration/test_smoke_command.py
+  - reports/README.md
+
+Context-Refs:
+  - docs/spec.md#feature-area-5-failure-injection-and-benchmark-reports
+  - docs/ARCHITECTURE.md#data-flow
+  - docs/IMPLEMENTATION_CONTRACT.md#stub-mode-is-default
+
+---
+
+## T17: Real 500-Job Reliability Proof
+
+State: done
+Owner: codex
+Phase: 5
+Type: benchmark
+Depends-On: T16
+
+Objective: |
+  Convert the v1 proof benchmark from a supported configuration into a real end-to-end runtime run that submits 500 jobs, uses worker-concurrency equivalent to 20 workers, injects controlled failures, and writes a report from actual state.
+
+Acceptance-Criteria:
+  - id: AC-1
+    description: "`python -m agent_runtime_grid.cli benchmark v1-proof --jobs 500 --workers 20 --failure-rate 0.10 --include-timeouts --repeat-idempotency-submissions --report reports/v1/reliability_report.md` creates and processes the requested workload."
+    test: "python -m pytest tests/load/test_reliability_proof.py::test_v1_proof_runs_against_runtime_state -q"
+  - id: AC-2
+    description: "The report shows submitted jobs, lifecycle distribution, completion rate, retry count, timeout count, DLQ count, queue lag p95, execution duration p95, artifact completeness, estimated cost, failure classification, and idempotency proof."
+    test: "python -m pytest tests/load/test_reliability_proof.py::test_v1_report_contains_required_runtime_evidence -q"
+  - id: AC-3
+    description: "Repeated idempotency submissions do not create duplicate terminal finalizations, and the report records `duplicate_finalization_count == 0`."
+    test: "python -m pytest tests/load/test_reliability_proof.py::test_v1_proof_records_zero_duplicate_finalizations -q"
+
+Files:
+  - src/agent_runtime_grid/cli/benchmark.py
+  - src/agent_runtime_grid/cli/main.py
+  - src/agent_runtime_grid/jobs/failure_injection.py
+  - tests/load/test_reliability_proof.py
+  - reports/v1/.gitkeep
+  - docs/EVIDENCE_INDEX.md
+
+Context-Refs:
+  - docs/ARCHITECTURE.md#cost-budget-and-attribution
+  - docs/ARCHITECTURE.md#observability
+  - docs/EVIDENCE_INDEX.md
+
+---
+
+## T18: Worker Crash and Stale Lease Recovery
+
+State: done
+Owner: codex
+Phase: 6
+Type: reliability
+Depends-On: T17
+
+Objective: |
+  Prove that a job leased by a worker that exits before acknowledgement or finalization is detected as stale, recovered safely, requeued, and finalized once by another worker.
+
+Acceptance-Criteria:
+  - id: AC-1
+    description: "A leased job whose worker stops before acknowledgement is detected as stale after the configured lease timeout."
+    test: "python -m pytest tests/integration/test_stale_lease_recovery.py::test_stale_lease_is_detected -q"
+  - id: AC-2
+    description: "Recovery requeues the unfinished job exactly once per recovery cycle, preserves the event trail, and lets another worker complete it."
+    test: "python -m pytest tests/integration/test_stale_lease_recovery.py::test_stale_job_requeues_and_completes_once -q"
+  - id: AC-3
+    description: "Repeated stale recovery respects retry limits, routes exhausted work to DLQ, and keeps terminal finalization idempotent."
+    test: "python -m pytest tests/integration/test_stale_lease_recovery.py::test_exhausted_stale_recovery_routes_to_dlq_without_duplicate_finalization -q"
+
+Files:
+  - src/agent_runtime_grid/worker/lease.py
+  - src/agent_runtime_grid/worker/recovery.py
+  - src/agent_runtime_grid/queue/redis_streams.py
+  - src/agent_runtime_grid/worker/state_machine.py
+  - tests/integration/test_stale_lease_recovery.py
+  - docs/FAILURE_MODES.md
+  - reports/failure-injection/.gitkeep
+
+Context-Refs:
+  - docs/ARCHITECTURE.md#runtime-and-isolation-model
+  - docs/IMPLEMENTATION_CONTRACT.md#idempotent-finalization
+  - docs/IMPLEMENTATION_CONTRACT.md#job-state-is-database-authoritative
+
+---
+
+## T19: Backpressure and Queue Lag Metrics
+
+State: done
+Owner: codex
+Phase: 6
+Type: observability
+Depends-On: T17
+
+Objective: |
+  Add runtime-derived queue and backpressure inspection so reports and metrics show queue depth, pending age, consumer lag, leased/running jobs, worker utilization, retry rate, DLQ count, queue wait, and execution duration.
+
+Acceptance-Criteria:
+  - id: AC-1
+    description: "Queue inspection calculates queue depth, oldest pending age, consumer lag, leased jobs, running jobs, retry rate, DLQ count, p95 queue wait, and p95 execution duration from queue and database state."
+    test: "python -m pytest tests/integration/test_queue_metrics.py::test_queue_backpressure_metrics_come_from_runtime_state -q"
+  - id: AC-2
+    description: "Prometheus output includes the backpressure metrics without raw payloads, API tokens, provider tokens, or secret-like labels."
+    test: "python -m pytest tests/integration/test_queue_metrics.py::test_queue_metrics_exclude_secrets_and_payloads -q"
+  - id: AC-3
+    description: "Smoke and v1 reliability reports include a queue/backpressure section with p95 queue wait and p95 execution duration."
+    test: "python -m pytest tests/load/test_reliability_proof.py::test_reports_include_backpressure_section -q"
+
+Files:
+  - src/agent_runtime_grid/queue/inspection.py
+  - src/agent_runtime_grid/observability/metrics.py
+  - src/agent_runtime_grid/cli/benchmark.py
+  - tests/integration/test_queue_metrics.py
+  - docs/OBSERVABILITY.md
+
+Context-Refs:
+  - docs/ARCHITECTURE.md#observability
+  - docs/IMPLEMENTATION_CONTRACT.md#observability
+
+---
+
+## T20: API Auth and Local Boundary Proof
+
+State: done
+Owner: codex
+Phase: 6
+Type: security
+Depends-On: T13
+
+Objective: |
+  Add executable tests and documentation proving that health stays public, mutation and inspection routes enforce token auth when configured, and no-token local mode is allowed only on localhost bindings.
+
+Acceptance-Criteria:
+  - id: AC-1
+    description: "`GET /health` is public and returns only secret-free health status."
+    test: "python -m pytest tests/integration/test_auth_boundary.py::test_health_is_public_and_secret_free -q"
+  - id: AC-2
+    description: "Mutation and inspection endpoints reject missing or wrong bearer tokens when `API_TOKEN` is configured."
+    test: "python -m pytest tests/integration/test_auth_boundary.py::test_non_health_routes_require_configured_token -q"
+  - id: AC-3
+    description: "No-token mode is accepted only for localhost binding and rejected for non-local host binding."
+    test: "python -m pytest tests/integration/test_auth_boundary.py::test_no_token_mode_requires_localhost_bind -q"
+
+Files:
+  - src/agent_runtime_grid/api/app.py
+  - src/agent_runtime_grid/api/routes/jobs.py
+  - src/agent_runtime_grid/config.py
+  - tests/integration/test_auth_boundary.py
+  - docs/SECURITY_BOUNDARIES.md
+  - README.md
+
+Context-Refs:
+  - docs/ARCHITECTURE.md#security-boundaries
+  - docs/IMPLEMENTATION_CONTRACT.md#authorization
+  - docs/IMPLEMENTATION_CONTRACT.md#credentials-and-secrets
+
+---
+
+## T21: Artifact Integrity in Reports
+
+State: done
+Owner: codex
+Phase: 6
+Type: evidence
+Depends-On: T17
+
+Objective: |
+  Make artifact completeness and integrity first-class report evidence by tying report rows to artifact path, SHA-256, size, job ID, run ID, attempt number, input digest, and creation time.
+
+Acceptance-Criteria:
+  - id: AC-1
+    description: "Each completed job artifact has path, SHA-256, size, job ID, run ID, attempt number, input digest, and created-at metadata."
+    test: "python -m pytest tests/integration/test_artifact_report_integrity.py::test_artifact_metadata_contains_integrity_fields -q"
+  - id: AC-2
+    description: "Benchmark reports include artifact completeness and integrity summaries derived from actual artifact metadata."
+    test: "python -m pytest tests/integration/test_artifact_report_integrity.py::test_report_summarizes_artifact_integrity_from_metadata -q"
+  - id: AC-3
+    description: "A missing or hash-mismatched artifact causes the smoke or reliability command to exit non-zero."
+    test: "python -m pytest tests/integration/test_artifact_report_integrity.py::test_report_generation_fails_on_missing_or_mismatched_artifact -q"
+
+Files:
+  - src/agent_runtime_grid/artifacts/store.py
+  - src/agent_runtime_grid/cli/benchmark.py
+  - tests/integration/test_artifact_report_integrity.py
+  - docs/EVIDENCE_INDEX.md
+
+Context-Refs:
+  - docs/ARCHITECTURE.md#data-flow
+  - docs/ARCHITECTURE.md#observability
+
+---
+
+## T22: Enforce Cost Budget Gates
+
+State: done
+Owner: codex
+Phase: 6
+Type: cost:budget
+Depends-On: T12, T17
+
+Objective: |
+  Move from cost telemetry records to enforceable per-job, per-run, retry, and live-mode budget gates while keeping stub mode at zero model cost.
+
+Acceptance-Criteria:
+  - id: AC-1
+    description: "Stub mode records zero cost and rejects any provider call during smoke or reliability runs."
+    test: "python -m pytest tests/integration/test_budget_enforcement.py::test_stub_mode_blocks_provider_calls -q"
+  - id: AC-2
+    description: "Live mode requires explicit per-job and per-run budget configuration before dispatch."
+    test: "python -m pytest tests/integration/test_budget_enforcement.py::test_live_mode_requires_explicit_budget -q"
+  - id: AC-3
+    description: "Budget overrun before dispatch or retry projection blocks the job, emits a budget-blocked event, and makes strict cost rollup exit non-zero."
+    test: "python -m pytest tests/integration/test_budget_enforcement.py::test_budget_overrun_blocks_dispatch_and_rollup_fails_strict -q"
+
+Files:
+  - src/agent_runtime_grid/cost/telemetry.py
+  - src/agent_runtime_grid/cost/rollup.py
+  - src/agent_runtime_grid/worker/state_machine.py
+  - src/agent_runtime_grid/worker/loop.py
+  - src/agent_runtime_grid/cli/cost.py
+  - tests/integration/test_budget_enforcement.py
+  - docs/COST_BUDGET.md
+
+Cost-Budget:
+  scope: workflow
+  max_cost_usd: 5
+  max_model_calls: 500
+  max_tool_calls: n/a
+  max_retries: 2
+  approval_required_when: "live mode enablement, model escalation, budget increase, retry expansion, or provider change"
+
+Context-Refs:
+  - docs/ARCHITECTURE.md#cost-budget-and-attribution
+  - docs/COST_BUDGET.md#guardrails
+  - docs/IMPLEMENTATION_CONTRACT.md#cost-budget-rules
+
+---
+
+## T23: Eval-Ground-Truth-Lab Integration
+
+State: done
+Owner: codex
+Phase: 7
+Type: integration
+Depends-On: T17, T21
+
+Objective: |
+  Add an `eval_lab_case` job type that lets Agent Runtime Grid run evaluation cases produced by Eval-Ground-Truth-Lab and produce artifacts that can be consumed by the evaluation report flow.
+
+Acceptance-Criteria:
+  - id: AC-1
+    description: "Runtime Grid accepts an `eval_lab_case` payload with dataset path, case ID, candidate ID, and stub-or-local execution mode without hardcoded absolute paths."
+    test: "python -m pytest tests/integration/test_eval_lab_integration.py::test_eval_lab_case_payload_is_validated_without_hardcoded_paths -q"
+  - id: AC-2
+    description: "Each eval case runs as a normal queued job and writes an artifact containing case ID, runtime status, eval result path, quality status, attempt count, and latency."
+    test: "python -m pytest tests/integration/test_eval_lab_integration.py::test_eval_lab_case_runs_and_writes_cross_linked_artifact -q"
+  - id: AC-3
+    description: "Runtime reliability reports and Eval-Ground-Truth-Lab output paths cross-link without coupling either project to a fixed local checkout."
+    test: "python -m pytest tests/integration/test_eval_lab_integration.py::test_runtime_and_eval_reports_cross_link_without_fixed_checkout -q"
+
+Files:
+  - src/agent_runtime_grid/jobs/eval_lab.py
+  - src/agent_runtime_grid/jobs/stub.py
+  - src/agent_runtime_grid/artifacts/store.py
+  - src/agent_runtime_grid/cli/benchmark.py
+  - tests/integration/test_eval_lab_integration.py
+  - docs/INTEGRATIONS.md
+
+Context-Refs:
+  - docs/ARCHITECTURE.md#external-integrations
+  - docs/IMPLEMENTATION_CONTRACT.md#worker-network-and-secret-scope
+
+---
+
+## T24: gdev-agent Batch Simulation Job
+
+State: done
+Owner: codex
+Phase: 7
+Type: integration
+Depends-On: T23
+
+Objective: |
+  Add a `gdev_webhook_eval` job type that runs a local batch of gdev-agent webhook evaluation cases through Runtime Grid and stores raw plus normalized response artifacts for downstream quality checks.
+
+Acceptance-Criteria:
+  - id: AC-1
+    description: "A local deterministic run executes 50 `gdev_webhook_eval` jobs through Runtime Grid without paid model calls by default."
+    test: "python -m pytest tests/integration/test_gdev_agent_integration.py::test_gdev_batch_runs_without_paid_model_calls -q"
+  - id: AC-2
+    description: "Each job artifact includes request hash, sanitized response, normalized fields, timing, attempt count, and runtime status."
+    test: "python -m pytest tests/integration/test_gdev_agent_integration.py::test_gdev_job_artifacts_include_runtime_and_response_evidence -q"
+  - id: AC-3
+    description: "Runtime Grid reliability output and Eval-Ground-Truth-Lab quality output cross-link for the same gdev-agent case IDs."
+    test: "python -m pytest tests/integration/test_gdev_agent_integration.py::test_gdev_runtime_and_eval_outputs_cross_link -q"
+
+Files:
+  - src/agent_runtime_grid/jobs/gdev_agent.py
+  - src/agent_runtime_grid/jobs/eval_lab.py
+  - src/agent_runtime_grid/artifacts/store.py
+  - tests/integration/test_gdev_agent_integration.py
+  - docs/INTEGRATIONS.md
+
+Cost-Budget:
+  scope: workflow
+  max_cost_usd: 0
+  max_model_calls: 0
+  max_tool_calls: n/a
+  max_retries: 2
+  approval_required_when: "non-local network target, live model mode, or broader worker egress"
+
+Context-Refs:
+  - docs/ARCHITECTURE.md#external-integrations
+  - docs/IMPLEMENTATION_CONTRACT.md#stub-mode-is-default
+  - docs/IMPLEMENTATION_CONTRACT.md#worker-network-and-secret-scope
+
+---
+
+## T25: Failure Injection Report Pack
+
+State: done
+Owner: codex
+Phase: 8
+Type: evidence
+Depends-On: T18, T19, T21
+
+Objective: |
+  Generate operator-readable failure-injection reports for transient retry, timeout, cancellation, stale worker recovery, duplicate finalization prevention, and DLQ routing.
+
+Acceptance-Criteria:
+  - id: AC-1
+    description: "Report commands generate markdown files for transient retry, timeout, cancellation, stale worker recovery, duplicate finalization prevention, and DLQ routing."
+    test: "python -m pytest tests/integration/test_failure_report_pack.py::test_failure_report_pack_writes_required_reports -q"
+  - id: AC-2
+    description: "Each report includes scenario, command, expected behavior, actual lifecycle, event trail, metrics, artifact evidence, and known limits."
+    test: "python -m pytest tests/integration/test_failure_report_pack.py::test_failure_reports_include_required_sections -q"
+  - id: AC-3
+    description: "Failure report generation fails when actual lifecycle evidence does not match the scenario expectation."
+    test: "python -m pytest tests/integration/test_failure_report_pack.py::test_failure_report_generation_fails_on_evidence_mismatch -q"
+
+Files:
+  - src/agent_runtime_grid/cli/failure_reports.py
+  - src/agent_runtime_grid/cli/benchmark.py
+  - tests/integration/test_failure_report_pack.py
+  - docs/FAILURE_MODES.md
+  - reports/failure-injection/.gitkeep
+
+Context-Refs:
+  - docs/ARCHITECTURE.md#observability
+  - docs/EVIDENCE_INDEX.md
+  - docs/IMPLEMENTATION_CONTRACT.md#idempotent-finalization
+
+---
+
+## T26: Case Study and Architecture Packaging
+
+State: done
+Owner: codex
+Phase: 8
+Type: docs
+Depends-On: T17, T18, T19, T23, T24, T25
+
+Objective: |
+  Package the completed reliability and integration evidence into a concise case study, architecture diagram, known-limits update, and final evidence index for technical stakeholders.
+
+Acceptance-Criteria:
+  - id: AC-1
+    description: "The case study explains the problem, API/Postgres/Redis/workers/artifacts/reports architecture, reliability mechanics, benchmark evidence, failure evidence, trade-offs, and production changes needed."
+    test: "rg -n \"Problem|Architecture|Reliability|Benchmark|Failure|Trade-offs|Production\" docs/CASE_STUDY.md"
+  - id: AC-2
+    description: "Architecture diagram documentation shows API to Postgres to Redis Streams to workers to artifacts/reports, including Eval-Ground-Truth-Lab and gdev-agent integration points."
+    test: "rg -n \"API|Postgres|Redis Streams|workers|artifacts|reports|Eval-Ground-Truth-Lab|gdev-agent\" docs/ARCHITECTURE_DIAGRAM.md"
+  - id: AC-3
+    description: "Known limits and evidence index are updated with real smoke, 500-job proof, stale-worker recovery, backpressure metrics, and integration report paths."
+    test: "rg -n \"smoke|500-job|stale|backpressure|Eval-Ground-Truth-Lab|gdev-agent\" docs/KNOWN_LIMITS.md docs/EVIDENCE_INDEX.md"
+
+Files:
+  - docs/CASE_STUDY.md
+  - docs/ARCHITECTURE_DIAGRAM.md
+  - docs/KNOWN_LIMITS.md
+  - docs/EVIDENCE_INDEX.md
+  - README.md
+
+Context-Refs:
+  - docs/ARCHITECTURE.md
+  - docs/EVIDENCE_INDEX.md
+  - docs/FAILURE_MODES.md

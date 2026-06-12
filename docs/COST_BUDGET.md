@@ -2,7 +2,7 @@
 
 Mode: Standard
 Owner: project operator
-Last updated: 2026-06-11
+Last updated: 2026-06-12
 
 ---
 
@@ -11,12 +11,12 @@ Last updated: 2026-06-11
 | Scope | Limit | Window | Enforcement |
 |-------|-------|--------|-------------|
 | Default stub benchmark run | $0 model cost | per run | block any provider call |
-| Optional live LLM benchmark run | target below $5 | per run | manual approval before run; runtime block after configured limit once T12 exists |
-| Per job | configured by job type; default $0 in stub mode | per job | block when configured limit is reached |
+| Optional live LLM benchmark run | target below $5 | per run | manual approval before run; live dispatch requires explicit run and job budgets |
+| Per job | configured by job type; default $0 in stub mode | per job | block dispatch when missing or above configured limit |
 | Per project / month | unknown | monthly | approval required before recurring live LLM usage |
 | Per agent / workflow | max 500 model calls for the v1 proof run when live mode is approved | per run | approval required for fan-out increase |
 
-T12 adds project-owned telemetry records and rollup generation. Live LLM execution still requires explicit approval and configuration before any provider call.
+T22 adds runtime budget gates for provider calls, live dispatch, retry projection, and strict cost rollup thresholds. Live LLM execution still requires explicit approval and configuration before any provider call.
 
 ---
 
@@ -91,7 +91,7 @@ python -m agent_runtime_grid.cli cost rollup \
   --strict
 ```
 
-- CI threshold command after T12:
+- CI threshold command after T22:
 
 ```bash
 python -m agent_runtime_grid.cli cost rollup \
@@ -103,7 +103,18 @@ python -m agent_runtime_grid.cli cost rollup \
   --max-run-cost 5
 ```
 
-Before T12, these commands are planned interfaces and are not CI gates.
+After T22, strict rollup exits non-zero when `--strict` is set and the loaded telemetry exceeds `--max-total-cost` or `--max-run-cost`, or when `--require-file` is set and the telemetry file is missing.
+
+---
+
+## Enforcement
+
+- Stub mode has `max_model_calls=0`; any provider call in stub mode raises `ProviderCallBlockedError`.
+- Live dispatch requires both a configured run budget and a configured per-job budget.
+- A live job without `budget_cents` is blocked before worker execution.
+- A job whose `budget_cents` exceeds the per-job or run budget is blocked before worker execution.
+- Retry projection checks the configured retry budget before requeueing a transient failure.
+- Budget-blocked worker paths emit a terminal `budget_blocked` event and acknowledge the Redis message only after the database event is recorded.
 
 ---
 

@@ -200,3 +200,147 @@ This file is not the source of truth for architecture or policy. Use it as a ret
 - Evidence collected: `docs/audit/PHASE4_FINAL_REVIEW.md`; `PATH=.venv/bin:$PATH python -m pytest -q`; `PATH=.venv/bin:$PATH ruff check`; `PATH=.venv/bin:$PATH ruff format --check`; `git diff --check`
 - Follow-ups: independent review/CI run before merge.
 - Notes for next agent: all planned tasks T01-T14 are done; local baseline is 41 passing tests with one non-blocking FastAPI/Starlette warning.
+
+### 2026-06-11 - Roadmap Expansion from External Assessment
+
+- Scope: `docs/tasks.md`, `docs/CODEX_PROMPT.md`, `docs/IMPLEMENTATION_JOURNAL.md`
+- Why this work happened: Convert the assessment gaps into concrete planned tasks without changing runtime code.
+- Decisions applied: added T15-T26 for root documentation, real smoke command, real 500-job reliability proof, stale lease recovery, backpressure metrics, auth boundary proof, artifact integrity evidence, cost budget enforcement, Eval-Ground-Truth-Lab integration, gdev-agent batch simulation, failure report pack, and case-study packaging.
+- Evidence collected: documentation-only update; verification should include forbidden-framing scan and markdown/diff checks.
+- Follow-ups: start `T15: Root README and Evidence Path`.
+- Notes for next agent: keep default execution in stub mode, preserve local T1 boundaries, and run deep review between roadmap phases.
+
+### 2026-06-12 - T15 - Root README and Evidence Path
+
+- Scope: `README.md`, `docs/KNOWN_LIMITS.md`, `reports/README.md`, `docs/EVIDENCE_INDEX.md`, `docs/tasks.md`, `docs/CODEX_PROMPT.md`
+- Why this work happened: Make the project understandable from the repository root and document the current evidence path before real smoke and reliability proof work.
+- Decisions applied: root docs use neutral operator/platform language; report docs distinguish current harness evidence from planned end-to-end smoke and reliability runs.
+- Evidence collected: `rg -n "local-first|T1 runtime|Redis Streams|Postgres|idempotent finalization|known limits" README.md`; `rg -n "100-job|500-job|smoke|reliability proof|reports" README.md docs/EVIDENCE_INDEX.md`; `rg -n "Temporal|Ray|Kubernetes|production sandbox|SaaS|autonomous swarm" docs/KNOWN_LIMITS.md README.md`; forbidden-framing scan.
+- Follow-ups: start `T16: Real Smoke Run Command`.
+- Notes for next agent: T15 changed documentation only; runtime baseline remains 41 passing tests.
+
+### 2026-06-12 - T16 - Real Smoke Run Command
+
+- Scope: `src/agent_runtime_grid/cli/smoke.py`, `src/agent_runtime_grid/cli/main.py`, `src/agent_runtime_grid/cli/__init__.py`, `src/agent_runtime_grid/cli/__main__.py`, `src/agent_runtime_grid/cli/benchmark.py`, `tests/integration/test_smoke_command.py`, `README.md`, `reports/README.md`, `docs/EVIDENCE_INDEX.md`, `docs/tasks.md`, `docs/CODEX_PROMPT.md`, `pyproject.toml`
+- Why this work happened: Turn the smoke path into a real local run through Postgres, Redis Streams, workers, artifacts, validation, and report generation.
+- Decisions applied: smoke remains stub-only with `failure_rate=0`; clean-state CLI runs use the same Postgres advisory lock as tests to avoid schema reset races; editable install is documented so `python -m agent_runtime_grid.cli smoke` works from the checkout.
+- Evidence collected: `PATH=.venv/bin:$PATH python -m pytest tests/integration/test_smoke_command.py::test_smoke_command_processes_jobs_through_runtime tests/integration/test_smoke_command.py::test_smoke_report_uses_runtime_state tests/integration/test_smoke_command.py::test_smoke_command_fails_on_lifecycle_mismatch -q`; `PATH=.venv/bin:$PATH python -m agent_runtime_grid.cli smoke --jobs 3 --workers 2 --failure-rate 0 --mode stub --artifact-root /tmp/arg-smoke-artifacts-editable --report /tmp/arg-smoke-editable.md`; `PATH=.venv/bin:$PATH python -m pytest -q`; `PATH=.venv/bin:$PATH ruff check`; `PATH=.venv/bin:$PATH ruff format --check`
+- Follow-ups: start `T17: Real 500-Job Reliability Proof`.
+- Notes for next agent: local baseline is now 44 passing tests with one non-blocking FastAPI/Starlette warning.
+
+### 2026-06-12 - T17 - Real 500-Job Reliability Proof
+
+- Scope: `src/agent_runtime_grid/cli/benchmark.py`, `src/agent_runtime_grid/cli/main.py`, `src/agent_runtime_grid/jobs/failure_injection.py`, `src/agent_runtime_grid/cli/smoke.py`, `tests/load/test_reliability_proof.py`, `reports/v1/.gitkeep`, `README.md`, `reports/README.md`, `docs/KNOWN_LIMITS.md`, `docs/EVIDENCE_INDEX.md`, `docs/tasks.md`, `docs/CODEX_PROMPT.md`
+- Why this work happened: Convert the v1 proof from config/report shape into a real runtime run with 500 jobs, 20 workers, controlled failures, timeout cases, repeated idempotency submissions, artifacts, validation, and report generation from actual state.
+- Decisions applied: v1 proof remains stub-only and $0 cost; failure plan is deterministic and includes transient, permanent, timeout, and idempotency replay cases; report rendering includes queue lag p95, execution duration p95, DLQ count, timeout count, failure classification, and idempotency proof.
+- Evidence collected: `PATH=.venv/bin:$PATH python -m pytest tests/load/test_reliability_proof.py -q`; `PATH=.venv/bin:$PATH python -m agent_runtime_grid.cli benchmark v1-proof --jobs 40 --workers 8 --failure-rate 0.20 --include-timeouts --repeat-idempotency-submissions --artifact-root /tmp/arg-proof-artifacts --report /tmp/arg-proof.md`; `PATH=.venv/bin:$PATH ruff check src/agent_runtime_grid/cli/benchmark.py src/agent_runtime_grid/jobs/failure_injection.py tests/load/test_reliability_proof.py`
+- Follow-ups: run Phase 5 boundary deep review before starting `T18: Worker Crash and Stale Lease Recovery`.
+- Notes for next agent: T17 load tests include a real 500-job runtime proof; expect the targeted test file to take around one minute locally.
+
+### 2026-06-12 - Phase 5 Boundary - Implementation Review
+
+- Scope: T15-T17 implementation, acceptance evidence, documentation packaging, smoke command, real 500-job reliability proof, stub-mode budget, SQL/Redis safety, forbidden framing, and secret scans.
+- Why this work happened: User requested deep review between phases before starting Phase 6.
+- Decisions applied: no blocking or warning findings means Phase 6 may start.
+- Evidence collected: `docs/audit/PHASE5_IMPLEMENTATION_REVIEW.md`; `PATH=.venv/bin:$PATH python -m pytest -q`; `PATH=.venv/bin:$PATH ruff check`; `PATH=.venv/bin:$PATH ruff format --check`; `git diff --check`
+- Follow-ups: start `T18: Worker Crash and Stale Lease Recovery`.
+- Notes for next agent: Phase 5 review found no blocker or warning findings; one non-blocking dependency warning remains from `fastapi.testclient`.
+
+### 2026-06-12 - T18 - Worker Crash and Stale Lease Recovery
+
+- Scope: `src/agent_runtime_grid/worker/lease.py`, `src/agent_runtime_grid/worker/recovery.py`, `src/agent_runtime_grid/queue/redis_streams.py`, `src/agent_runtime_grid/worker/state_machine.py`, `tests/integration/test_stale_lease_recovery.py`, `docs/FAILURE_MODES.md`, `reports/failure-injection/.gitkeep`
+- Why this work happened: Prove recovery semantics for a worker that leases work, records `running`, and exits before acknowledgement or finalization.
+- Decisions applied: Redis pending entries identify stale delivery; Postgres remains lifecycle authority; recovery records `stale_lease_recovered` before requeue, acknowledges stale entries after requeue, and finalizes exhausted stale leases as failed before moving them to the Redis DLQ.
+- Evidence collected: `PATH=.venv/bin:$PATH python -m pytest tests/integration/test_stale_lease_recovery.py -q`
+- Follow-ups: run full baseline and start `T19: Backpressure and Queue Lag Metrics`.
+- Notes for next agent: stale recovery uses the same retry budget convention as transient retries, where attempt `N` may schedule `N+1` only while `N <= max_retries`.
+
+### 2026-06-12 - T19 - Backpressure and Queue Lag Metrics
+
+- Scope: `src/agent_runtime_grid/queue/inspection.py`, `src/agent_runtime_grid/observability/metrics.py`, `src/agent_runtime_grid/cli/smoke.py`, `src/agent_runtime_grid/cli/benchmark.py`, `tests/integration/test_queue_metrics.py`, `tests/load/test_reliability_proof.py`, `docs/OBSERVABILITY.md`
+- Why this work happened: Add runtime-derived queue and backpressure visibility to reports and Prometheus output.
+- Decisions applied: queue depth is consumer-group pending plus lag; p95 queue wait is `submitted -> running`; p95 execution duration is `running -> terminal`; Prometheus backpressure gauges use no dynamic labels.
+- Evidence collected: `PATH=.venv/bin:$PATH python -m pytest tests/integration/test_queue_metrics.py tests/integration/test_metrics.py tests/integration/test_observability_safety.py tests/load/test_reliability_proof.py::test_reports_include_backpressure_section -q`
+- Follow-ups: run full baseline and start `T20: API Auth and Local Boundary Proof`.
+- Notes for next agent: the legacy reliability fields remain in reports, but `## queue/backpressure` is now the precise operational section.
+
+### 2026-06-12 - T20 - API Auth and Local Boundary Proof
+
+- Scope: `src/agent_runtime_grid/api/app.py`, `src/agent_runtime_grid/api/routes/jobs.py`, `src/agent_runtime_grid/config.py`, `tests/integration/test_auth_boundary.py`, `docs/SECURITY_BOUNDARIES.md`, `README.md`
+- Why this work happened: Prove the API's local safety boundary with executable tests and documentation.
+- Decisions applied: health remains public and secret-free; non-health routes require bearer auth when `API_TOKEN` is configured; app creation rejects no-token mode unless `API_BIND_HOST` is localhost.
+- Evidence collected: `PATH=.venv/bin:$PATH python -m pytest tests/integration/test_auth_boundary.py tests/test_health.py tests/test_settings.py -q`
+- Follow-ups: run full baseline and start `T21: Artifact Integrity in Reports`.
+- Notes for next agent: `API_BIND_HOST` defaults to `127.0.0.1`, so existing local test and CLI paths continue to work without setting a token.
+
+### 2026-06-12 - T21 - Artifact Integrity in Reports
+
+- Scope: `src/agent_runtime_grid/artifacts/store.py`, `src/agent_runtime_grid/worker/loop.py`, `src/agent_runtime_grid/cli/smoke.py`, `src/agent_runtime_grid/cli/benchmark.py`, `tests/integration/test_artifact_report_integrity.py`, `tests/integration/test_artifacts.py`, `reports/README.md`
+- Why this work happened: Make report artifact evidence verifiable beyond a file-exists completeness check.
+- Decisions applied: completed event results now carry artifact metadata; report generation validates path existence, size, SHA-256, and JSON identity fields; missing or tampered artifacts raise `ArtifactIntegrityError`.
+- Evidence collected: `PATH=.venv/bin:$PATH python -m pytest tests/integration/test_artifact_report_integrity.py tests/integration/test_artifacts.py tests/integration/test_smoke_command.py tests/load/test_reliability_proof.py::test_v1_report_contains_required_runtime_evidence tests/load/test_benchmark_harness.py::test_report_contains_required_reliability_fields -q`
+- Follow-ups: run full baseline and start `T22: Enforce Cost Budget Gates`.
+- Notes for next agent: artifact integrity rows are rendered under `## artifact integrity` in smoke and v1 reliability reports.
+
+### 2026-06-12 - T22 - Enforce Cost Budget Gates
+
+- Scope: `src/agent_runtime_grid/cost/telemetry.py`, `src/agent_runtime_grid/cost/rollup.py`, `src/agent_runtime_grid/cli/cost.py`, `src/agent_runtime_grid/cli/main.py`, `src/agent_runtime_grid/worker/state_machine.py`, `src/agent_runtime_grid/worker/loop.py`, `tests/integration/test_budget_enforcement.py`, `docs/COST_BUDGET.md`
+- Why this work happened: Move cost controls from telemetry-only records to enforceable runtime and rollup gates.
+- Decisions applied: stub mode blocks provider calls; live dispatch requires run and job budgets; retry projection can block requeue; blocked worker paths emit terminal `budget_blocked`; strict cost rollup writes violations and exits non-zero.
+- Evidence collected: `PATH=.venv/bin:$PATH python -m pytest tests/integration/test_budget_enforcement.py tests/integration/test_cost_telemetry.py tests/integration/test_worker_lifecycle.py::test_transient_error_requeues_until_retry_limit -q`; `PATH=.venv/bin:$PATH python -m agent_runtime_grid.cli cost rollup --help`
+- Follow-ups: run full baseline and start `T23: Eval-Ground-Truth-Lab Integration`.
+- Notes for next agent: top-level CLI now registers `cost rollup`; threshold options are parsed as strings and converted to `Decimal` inside the command because Typer does not support `Decimal` parameters directly.
+
+### 2026-06-12 - T23 - Eval-Ground-Truth-Lab Integration
+
+- Scope: `src/agent_runtime_grid/jobs/eval_lab.py`, `src/agent_runtime_grid/worker/loop.py`, `src/agent_runtime_grid/artifacts/store.py`, `src/agent_runtime_grid/cli/benchmark.py`, `tests/integration/test_eval_lab_integration.py`, `docs/INTEGRATIONS.md`
+- Why this work happened: Let Runtime Grid execute Eval-Ground-Truth-Lab cases as normal queued jobs without fixed local checkout coupling.
+- Decisions applied: `eval_lab_case` reads JSONL cases directly, supports relative paths, writes deterministic local eval result JSON, and cross-links Eval Lab output to runtime artifact evidence.
+- Evidence collected: `PATH=.venv/bin:$PATH python -m pytest tests/integration/test_eval_lab_integration.py tests/integration/test_artifact_report_integrity.py -q`
+- Follow-ups: run full baseline and start `T24: gdev-agent Batch Simulation Job`.
+- Notes for next agent: the Eval Lab runner intentionally does not import the sibling Eval-Ground-Truth-Lab package; this keeps the integration path portable.
+
+### 2026-06-12 - T24 - gdev-agent Batch Simulation Job
+
+- Scope: `src/agent_runtime_grid/jobs/gdev_agent.py`, `src/agent_runtime_grid/worker/loop.py`, `src/agent_runtime_grid/artifacts/store.py`, `tests/integration/test_gdev_agent_integration.py`, `docs/INTEGRATIONS.md`
+- Why this work happened: Connect Runtime Grid, Eval Lab-style outputs, and gdev-agent-style webhook cases through the same queue/worker/artifact path.
+- Decisions applied: `gdev_webhook_eval` is deterministic by default, stores request hashes instead of raw requests, writes sanitized response and normalized fields, and cross-links Eval output to runtime artifact evidence.
+- Evidence collected: `PATH=.venv/bin:$PATH python -m pytest tests/integration/test_gdev_agent_integration.py tests/integration/test_eval_lab_integration.py -q`
+- Follow-ups: run full baseline and start `T25: Failure Injection Report Pack`.
+- Notes for next agent: no gdev-agent process or network call is required in the default path; live/local HTTP expansion would need a future explicit budget and egress task.
+
+### 2026-06-12 - Phase 7 Boundary - Implementation Review
+
+- Scope: T23-T24 integration work, artifact cross-linking, local execution boundaries, fixed-path coupling, egress, cost, and evidence state.
+- Why this work happened: User requested deep review between phases before starting Phase 8.
+- Decisions applied: no blocking or warning findings means Phase 8 may start.
+- Evidence collected: `docs/audit/PHASE7_IMPLEMENTATION_REVIEW.md`; `PATH=.venv/bin:$PATH python -m pytest tests/integration/test_eval_lab_integration.py tests/integration/test_gdev_agent_integration.py -q`; `PATH=.venv/bin:$PATH python -m pytest -q`; `PATH=.venv/bin:$PATH ruff check`; `PATH=.venv/bin:$PATH ruff format --check`; `git diff --check`
+- Follow-ups: start `T25: Failure Injection Report Pack`.
+- Notes for next agent: Phase 7 default paths are deterministic and local; live adapter expansion remains out of scope.
+
+### 2026-06-12 - T25 - Failure Injection Report Pack
+
+- Scope: `src/agent_runtime_grid/cli/failure_reports.py`, `src/agent_runtime_grid/cli/main.py`, `tests/integration/test_failure_report_pack.py`, `docs/FAILURE_MODES.md`, `reports/README.md`
+- Why this work happened: Make failure-injection evidence operator-readable as report files rather than only executable tests.
+- Decisions applied: report generation validates actual lifecycle evidence against expected lifecycle before writing; mismatches fail generation.
+- Evidence collected: `PATH=.venv/bin:$PATH python -m pytest tests/integration/test_failure_report_pack.py -q`; `PATH=.venv/bin:$PATH python -m agent_runtime_grid.cli failure-reports write-pack --output-dir /tmp/arg-failure-reports`
+- Follow-ups: run full baseline and start `T26: Case Study and Architecture Packaging`.
+- Notes for next agent: reports are generated under ignored `reports/failure-injection/*.md`; `.gitkeep` preserves the directory.
+
+### 2026-06-12 - T26 - Case Study and Architecture Packaging
+
+- Scope: `docs/CASE_STUDY.md`, `docs/ARCHITECTURE_DIAGRAM.md`, `docs/KNOWN_LIMITS.md`, `docs/EVIDENCE_INDEX.md`, `README.md`
+- Why this work happened: Package completed reliability and integration evidence into a concise operator-facing narrative.
+- Decisions applied: case study separates current local T1 proof from production changes needed; architecture diagram includes API, Postgres, Redis Streams, workers, artifacts, reports, Eval Lab, and gdev-agent integration points.
+- Evidence collected: T26 acceptance `rg` checks; full verification pending.
+- Follow-ups: run final verification and final Phase 8 review.
+- Notes for next agent: T01-T26 are now marked done; generated report contents remain ignored by git.
+
+### 2026-06-12 - Phase 8 Final Review
+
+- Scope: T25-T26 implementation, final T01-T26 task state, full baseline, quality gates, prohibited framing scan, known limits, evidence index, and packaging docs.
+- Why this work happened: Close the uninterrupted development pass with the requested phase-boundary deep review.
+- Decisions applied: no blocking or warning findings remain; repository is ready for granular commits and push.
+- Evidence collected: `docs/audit/PHASE8_FINAL_REVIEW.md`; `PATH=.venv/bin:$PATH python -m pytest -q`; `PATH=.venv/bin:$PATH ruff check`; `PATH=.venv/bin:$PATH ruff format --check`; `git diff --check`
+- Follow-ups: commit granular changes and push.
+- Notes for next agent: local baseline is 71 passing tests with one non-blocking FastAPI/Starlette deprecation warning.

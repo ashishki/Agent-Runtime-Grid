@@ -1,8 +1,8 @@
 # CODEX_PROMPT.md
 
 Version: 1.0
-Date: 2026-06-11
-Phase: 4
+Date: 2026-06-12
+Phase: 8
 
 This file is the project handoff state for Codex sessions. Repository files, tests, audit reports, and CI results are authoritative.
 
@@ -12,16 +12,16 @@ This file is the project handoff state for Codex sessions. Repository files, tes
 
 - **Project:** Agent Runtime Grid
 - **Mode:** Standard
-- **Phase:** 4
-- **Baseline:** 41 passing tests after T14 (`python -m pytest -q`)
+- **Phase:** 8
+- **Baseline:** 71 passing tests after T25 (`python -m pytest -q`)
 - **Ruff:** configured in T01; `ruff check` and `ruff format --check` pass locally
 - **Last CI run:** not yet run
-- **Last updated:** 2026-06-11
+- **Last updated:** 2026-06-12
 - **Session tokens (approx):** not tracked
 - **Cumulative phase tokens (approx):** not tracked
 - **Session cost (approx):** not tracked
 - **Cumulative phase cost (approx):** not tracked
-- **Budget status:** within Phase 2 implementation budget; default runtime remains stub mode with $0 model cost
+- **Budget status:** within roadmap planning budget; default runtime remains stub mode with $0 model cost
 
 ---
 
@@ -57,15 +57,14 @@ Implementation agents do not self-review meaningful changes. Review findings are
 
 ## Next Task
 
-**All Planned Tasks Complete**
+**Post-Review State**
 
 Narrow task digest:
 
-- T01-T14 are marked done in `docs/tasks.md`.
-- Final review artifact: `docs/audit/PHASE4_FINAL_REVIEW.md`.
-- Current baseline: 41 passing tests.
-- Ruff lint and format gates pass.
-- No blocking findings are open.
+- T01-T26 are complete and final Phase 8 review passed.
+- Next operator action is commit/push or future roadmap planning.
+- Do not add live model calls.
+- Current baseline is 71 passing tests after T26 and final review.
 
 ---
 
@@ -87,11 +86,11 @@ empty
 ## Cost Budget State
 
 - Budget artifact: `docs/COST_BUDGET.md`
-- Telemetry source: none yet; T12 adds project-owned telemetry
+- Telemetry source: `src/agent_runtime_grid/cost/telemetry.py`
 - Last rollup: not run
 - Default stub run budget: $0 model cost
 - Optional live LLM benchmark target: below $5 per full benchmark run
-- Per-job budget: configurable by job type; unavailable until implemented
+- Per-job budget: configurable by job type; enforcement planned in T22
 - Monthly project budget: unknown; requires human approval before any recurring live LLM usage
 - Approval required before: live LLM mode, model escalation, fan-out increase, retry expansion, tool-call expansion, external egress, or budget overrun
 - Last recorded AI/model cost: none
@@ -314,3 +313,111 @@ none
 - Review artifact: `docs/audit/PHASE4_FINAL_REVIEW.md`.
 - Result: PASS with no blocking findings.
 - All planned tasks are complete.
+
+### 2026-06-12 - T15 Root README and Evidence Path
+
+- Added root operator README, known limits, reports guide, and evidence index updates.
+- Next implementation task is T16.
+
+### 2026-06-12 - T16 Real Smoke Run Command
+
+- Added real stub-only smoke command that submits jobs, runs workers, writes artifacts, validates lifecycle expectations, and renders a report from runtime state.
+- Local baseline became 44 passing tests.
+- Next implementation task is T17.
+
+### 2026-06-12 - T17 Real 500-Job Reliability Proof
+
+- Added real v1 reliability proof command and load tests for 500 jobs, worker concurrency, injected failures, timeouts, idempotency replay, artifacts, and report validation.
+- Local baseline became 47 passing tests.
+- Next step was Phase 5 boundary review.
+
+### 2026-06-12 - Phase 5 Boundary Review
+
+- Ran Phase 5 implementation review for T15-T17.
+- Review artifact: `docs/audit/PHASE5_IMPLEMENTATION_REVIEW.md`.
+- Result: PASS with no blocking findings.
+- Phase advanced to 6; next implementation task is T18.
+
+### 2026-06-12 - T18 Worker Crash and Stale Lease Recovery
+
+- Added Redis pending-entry stale lease detection and recovery service.
+- Recovery records `stale_lease_recovered` when retry budget remains, requeues exactly one next-attempt message per recovery cycle, and sends exhausted stale leases to DLQ after idempotent failed finalization.
+- Local baseline is expected to be 50 passing tests after full verification.
+- Next implementation task is T19.
+
+### 2026-06-12 - T19 Backpressure and Queue Lag Metrics
+
+- Added `QueueBackpressureSnapshot` inspection from Redis Streams and Postgres event state.
+- Prometheus metrics now include queue depth, pending age, consumer lag, leased/running jobs, retry rate, DLQ count, p95 queue wait, and p95 execution duration without dynamic labels.
+- Smoke and v1 reliability reports now include a `queue/backpressure` section.
+- Local baseline is expected to be 53 passing tests after full verification.
+- Next implementation task is T20.
+
+### 2026-06-12 - T20 API Auth and Local Boundary Proof
+
+- Added startup validation for localhost-only no-token API mode through `API_BIND_HOST`.
+- Added integration tests for public health, bearer-token protected non-health routes, and non-local no-token rejection.
+- Added `docs/SECURITY_BOUNDARIES.md` and README pointers.
+- Local baseline is expected to be 56 passing tests after full verification.
+- Next implementation task is T21.
+
+### 2026-06-12 - T21 Artifact Integrity in Reports
+
+- Added artifact metadata fields for run ID, attempt number, input digest, created-at, path, size, and SHA-256.
+- Completed events now include artifact metadata, and report generation validates file existence, size, SHA-256, and JSON identity fields.
+- Smoke and v1 reliability reports now include `## artifact integrity` rows.
+- Local baseline is expected to be 59 passing tests after full verification.
+- Next implementation task is T22.
+
+### 2026-06-12 - T22 Enforce Cost Budget Gates
+
+- Added `BudgetPolicy` gates for stub provider-call blocking, live dispatch budget requirements, per-job/run budget overrun, and retry projection.
+- Worker blocked budget paths now finalize with a terminal `budget_blocked` event.
+- Cost rollup supports `--strict`, `--require-file`, `--max-total-cost`, and `--max-run-cost`; top-level CLI exposes `cost rollup`.
+- Local baseline is expected to be 62 passing tests after full verification.
+- Next implementation task is T23.
+
+### 2026-06-12 - T23 Eval-Ground-Truth-Lab Integration
+
+- Added `eval_lab_case` job type with JSONL case loading, relative path support, deterministic local result generation, and artifact payload fields.
+- Runtime artifacts and Eval Lab result JSON now cross-link without importing or hardcoding the sibling checkout.
+- Added `docs/INTEGRATIONS.md`.
+- Local baseline is expected to be 65 passing tests after full verification.
+- Next implementation task is T24.
+
+### 2026-06-12 - T24 gdev-agent Batch Simulation Job
+
+- Added deterministic `gdev_webhook_eval` job type with request hashing, sanitized response, normalized fields, timing, attempts, runtime status, and Eval Lab output cross-links.
+- Added a 50-job runtime batch test with zero provider calls by default.
+- Updated integration docs.
+- Local baseline is expected to be 68 passing tests after full verification.
+- Next implementation task is T25.
+
+### 2026-06-12 - Phase 7 Boundary Review
+
+- Ran Phase 7 implementation review for T23-T24.
+- Review artifact: `docs/audit/PHASE7_IMPLEMENTATION_REVIEW.md`.
+- Result: PASS with no blocking findings.
+- Phase advanced to 8; next implementation task is T25.
+
+### 2026-06-12 - T25 Failure Injection Report Pack
+
+- Added `failure-reports write-pack` command.
+- Generated report definitions for transient retry, timeout, cancellation, stale worker recovery, duplicate finalization prevention, and DLQ routing.
+- Report generation validates actual lifecycle evidence before writing.
+- Local baseline is expected to be 71 passing tests after full verification.
+- Next implementation task is T26.
+
+### 2026-06-12 - T26 Case Study and Architecture Packaging
+
+- Added `docs/CASE_STUDY.md` and `docs/ARCHITECTURE_DIAGRAM.md`.
+- Updated known limits, evidence index, and README packaging pointers.
+- All tasks T01-T26 are marked done.
+- Next step is final Phase 8 review, verification, commits, and push.
+
+### 2026-06-12 - Phase 8 Final Review
+
+- Ran final implementation review for T25-T26 and final T01-T26 task state.
+- Review artifact: `docs/audit/PHASE8_FINAL_REVIEW.md`.
+- Result: PASS with no blocking findings.
+- Repository is ready for granular commits and push.

@@ -1,7 +1,7 @@
 # Evidence Index - Agent Runtime Grid
 
 Version: 1.0
-Last updated: 2026-06-11
+Last updated: 2026-06-12
 
 Purpose:
 
@@ -44,7 +44,34 @@ Maintain this file for:
 | T12 cost telemetry | integration tests | `tests/integration/test_cost_telemetry.py` | Required cost fields, budget-block event, and cost rollup report output | 2026-06-11 | Yes |
 | T13 CLI batch workflow | integration tests | `tests/integration/test_cli_batch.py` | Batch submission count/run ID, lifecycle status formatting, and cleanup preserving metadata | 2026-06-11 | Yes |
 | T14 load benchmark harness | load tests | `tests/load/test_benchmark_harness.py`, `reports/.gitkeep` | Smoke report generation, v1 proof config, and required reliability report fields | 2026-06-11 | Yes |
+| T15 root operator docs | documentation | `README.md`, `docs/KNOWN_LIMITS.md`, `reports/README.md` | Operator overview, quickstart path, report locations, and explicit known limits | 2026-06-12 | Yes |
+| T16 real smoke command | integration tests, CLI check | `tests/integration/test_smoke_command.py`, `src/agent_runtime_grid/cli/smoke.py`, `reports/smoke.md` | Real 100-job smoke path through Postgres, Redis Streams, workers, artifacts, validation, and runtime-state report generation | 2026-06-12 | Yes |
+| T17 real 500-job reliability proof | load tests, CLI check | `tests/load/test_reliability_proof.py`, `src/agent_runtime_grid/cli/benchmark.py`, `reports/v1/reliability_report.md` | Real 500-job proof path through Postgres, Redis Streams, workers, injected failures, timeout cases, idempotency replay, artifacts, validation, and runtime-state report generation | 2026-06-12 | Yes |
+| Phase 5 implementation review | review | `docs/audit/PHASE5_IMPLEMENTATION_REVIEW.md` | T15-T17 implementation, docs/evidence path, smoke command, real reliability proof, policy scans, and baseline review | 2026-06-12 | Yes |
+| T18 stale lease recovery | integration tests, documentation | `tests/integration/test_stale_lease_recovery.py`, `src/agent_runtime_grid/worker/recovery.py`, `docs/FAILURE_MODES.md` | Redis pending stale lease detection, DB-authoritative recovery, exact requeue per recovery cycle, DLQ exhaustion, preserved event trail, and idempotent terminal finalization | 2026-06-12 | Yes |
+| T19 queue/backpressure metrics | integration and load tests, documentation | `tests/integration/test_queue_metrics.py`, `tests/load/test_reliability_proof.py::test_reports_include_backpressure_section`, `src/agent_runtime_grid/queue/inspection.py`, `docs/OBSERVABILITY.md` | Runtime-derived queue depth, oldest pending age, consumer lag, leased/running jobs, worker utilization, retry rate, DLQ count, p95 queue wait, p95 execution duration, Prometheus gauges, and report section | 2026-06-12 | Yes |
+| T20 API auth boundary | integration tests, documentation | `tests/integration/test_auth_boundary.py`, `src/agent_runtime_grid/api/app.py`, `src/agent_runtime_grid/api/routes/jobs.py`, `docs/SECURITY_BOUNDARIES.md` | Secret-free public health, token-required mutation and inspection routes when configured, and localhost-only no-token API mode | 2026-06-12 | Yes |
+| T21 artifact report integrity | integration tests | `tests/integration/test_artifact_report_integrity.py`, `src/agent_runtime_grid/artifacts/store.py`, `src/agent_runtime_grid/cli/benchmark.py`, `src/agent_runtime_grid/cli/smoke.py` | Artifact metadata fields for path, SHA-256, size, job ID, run ID, attempt number, input digest, created-at; report integrity rows; missing/hash-mismatched artifact failure path | 2026-06-12 | Yes |
+| T22 cost budget gates | integration tests, CLI check, documentation | `tests/integration/test_budget_enforcement.py`, `src/agent_runtime_grid/cost/telemetry.py`, `src/agent_runtime_grid/cost/rollup.py`, `src/agent_runtime_grid/worker/loop.py`, `docs/COST_BUDGET.md` | Stub provider-call blocking, live dispatch budget requirements, retry-budget block with `budget_blocked` event, and strict cost rollup non-zero threshold behavior | 2026-06-12 | Yes |
+| T23 Eval Lab integration | integration tests, documentation | `tests/integration/test_eval_lab_integration.py`, `src/agent_runtime_grid/jobs/eval_lab.py`, `src/agent_runtime_grid/artifacts/store.py`, `docs/INTEGRATIONS.md` | `eval_lab_case` payload validation, queued worker execution, cross-linked runtime artifact and Eval Lab result paths, and no fixed checkout coupling | 2026-06-12 | Yes |
+| T24 gdev-agent batch simulation | integration tests, documentation | `tests/integration/test_gdev_agent_integration.py`, `src/agent_runtime_grid/jobs/gdev_agent.py`, `docs/INTEGRATIONS.md` | 50-job deterministic gdev webhook batch, zero provider calls by default, request hash, sanitized response, normalized fields, runtime timing, attempts, status, and Eval Lab cross-links | 2026-06-12 | Yes |
+| Phase 7 implementation review | review | `docs/audit/PHASE7_IMPLEMENTATION_REVIEW.md` | T23-T24 integration implementation, local/stub boundaries, artifact cross-links, no fixed checkout coupling, egress scan, and baseline review | 2026-06-12 | Yes |
+| T25 failure report pack | integration tests, CLI check, reports | `tests/integration/test_failure_report_pack.py`, `src/agent_runtime_grid/cli/failure_reports.py`, `reports/failure-injection/*.md`, `docs/FAILURE_MODES.md` | Markdown reports for transient retry, timeout, cancellation, stale worker recovery, duplicate finalization prevention, and DLQ routing with lifecycle validation | 2026-06-12 | Yes |
+| T26 case study packaging | documentation | `docs/CASE_STUDY.md`, `docs/ARCHITECTURE_DIAGRAM.md`, `docs/KNOWN_LIMITS.md`, `README.md` | Problem, architecture, reliability, benchmark, failure, trade-offs, production changes, runtime diagram, integration points, and final packaging pointers | 2026-06-12 | Yes |
+| Phase 8 final review | review | `docs/audit/PHASE8_FINAL_REVIEW.md` | T25-T26 implementation, final T01-T26 task state, full baseline, quality gates, packaging checks, and residual risks | 2026-06-12 | Yes |
 | Phase 1 audit index | audit index | `docs/audit/AUDIT_INDEX.md` | Pointers to audit results | 2026-06-11 | Yes |
+
+---
+
+## Report Paths
+
+| Report | Location | Status | Notes |
+|--------|----------|--------|-------|
+| Current smoke harness report | `reports/load_smoke.md` | implemented harness output | Generated locally; contents ignored by git. |
+| 100-job smoke report | `reports/smoke.md` | implemented in T16 | Generated from actual runtime state. Contents ignored by git. |
+| 500-job reliability proof | `reports/v1/reliability_report.md` | implemented in T17; backpressure section added in T19; artifact integrity rows added in T21 | Includes lifecycle, retry, timeout, DLQ, idempotency, artifact integrity, queue lag, execution duration, backpressure, and cost evidence. Contents ignored by git. |
+| Stale lease recovery proof | `tests/integration/test_stale_lease_recovery.py` | implemented in T18; report included in T25 | Executable proof for worker crash after lease plus human-readable failure report coverage. |
+| Failure injection report pack | `reports/failure-injection/*.md` | implemented in T25 | Includes scenario, command, expected behavior, actual lifecycle, event trail, metrics, artifacts, and known limits. |
 
 ---
 

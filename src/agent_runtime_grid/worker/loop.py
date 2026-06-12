@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import asyncio
 from uuid import UUID
 
+from redis.exceptions import RedisError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from agent_runtime_grid.artifacts.store import ArtifactStore
@@ -44,6 +46,7 @@ class Worker:
         artifact_store: ArtifactStore | None = None,
         cancellation_registry: CancellationRegistry | None = None,
         budget_policy: BudgetPolicy | None = None,
+        lease_renewal_interval_seconds: float | None = 5.0,
     ) -> None:
         self.worker_id = worker_id
         self._queue = queue
@@ -52,6 +55,7 @@ class Worker:
         self._artifact_store = artifact_store
         self._cancellation_registry = cancellation_registry or CancellationRegistry()
         self._budget_policy = budget_policy or BudgetPolicy.stub()
+        self._lease_renewal_interval_seconds = lease_renewal_interval_seconds
 
     async def process_one(self) -> bool:
         leased_jobs = await self._queue.lease_jobs(consumer_name=self.worker_id, count=1)
@@ -96,6 +100,7 @@ class Worker:
                     attempt_number=message.attempt_number,
                 )
 
+            heartbeat_task = self._start_lease_heartbeat(message)
             try:
                 cancellation_event = self._cancellation_registry.event_for(str(job.id))
                 if job.job_type == "eval_lab_case":
@@ -148,6 +153,8 @@ class Worker:
                     )
                 if message.entry_id is not None:
                     await self._queue.acknowledge(message.entry_id)
+            finally:
+                await self._stop_lease_heartbeat(heartbeat_task)
 
     async def _handle_transient_error(
         self,
@@ -204,6 +211,46 @@ class Worker:
 
         if message.entry_id is not None:
             await self._queue.acknowledge(message.entry_id)
+
+    def _start_lease_heartbeat(self, message: QueueJobMessage) -> asyncio.Task[None] | None:
+        if message.entry_id is None:
+            return None
+        if (
+            self._lease_renewal_interval_seconds is None
+            or self._lease_renewal_interval_seconds <= 0
+        ):
+            return None
+        return asyncio.create_task(
+            self._renew_lease_until_cancelled(
+                entry_id=message.entry_id,
+                interval_seconds=self._lease_renewal_interval_seconds,
+            )
+        )
+
+    async def _stop_lease_heartbeat(self, heartbeat_task: asyncio.Task[None] | None) -> None:
+        if heartbeat_task is None:
+            return
+        heartbeat_task.cancel()
+        try:
+            await heartbeat_task
+        except asyncio.CancelledError:
+            pass
+
+    async def _renew_lease_until_cancelled(
+        self,
+        *,
+        entry_id: str,
+        interval_seconds: float,
+    ) -> None:
+        while True:
+            await asyncio.sleep(interval_seconds)
+            try:
+                await self._queue.renew_pending_lease(
+                    entry_id=entry_id,
+                    consumer_name=self.worker_id,
+                )
+            except RedisError:
+                continue
 
     async def _handle_timeout(self, message: QueueJobMessage, job) -> None:
         async with self._session_factory() as session:

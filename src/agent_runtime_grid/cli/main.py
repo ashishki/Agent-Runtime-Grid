@@ -206,9 +206,11 @@ def cleanup_command(
 from agent_runtime_grid.cli.benchmark import benchmark_app  # noqa: E402
 from agent_runtime_grid.cli.cost import app as cost_app  # noqa: E402
 from agent_runtime_grid.cli.failure_reports import app as failure_reports_app  # noqa: E402
+from agent_runtime_grid.cli.operator import app as operator_app  # noqa: E402
 from agent_runtime_grid.cli.smoke import smoke_command  # noqa: E402
 
 app.add_typer(benchmark_app, name="benchmark")
 app.add_typer(cost_app, name="cost")
 app.add_typer(failure_reports_app, name="failure-reports")
+app.add_typer(operator_app, name="operator")
 app.command("smoke")(smoke_command)

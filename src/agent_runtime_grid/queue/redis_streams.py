@@ -95,6 +95,23 @@ class RedisStreamsQueue:
             )
         return stale_entries
 
+    async def renew_pending_lease(
+        self,
+        *,
+        entry_id: str,
+        consumer_name: str,
+    ) -> bool:
+        await self.ensure_consumer_group()
+        renewed_entry_ids = await self._redis.xclaim(
+            self.stream_name,
+            self.consumer_group,
+            consumer_name,
+            min_idle_time=0,
+            message_ids=[entry_id],
+            justid=True,
+        )
+        return entry_id in renewed_entry_ids
+
     async def acknowledge(self, entry_id: str) -> int:
         return await self._redis.xack(self.stream_name, self.consumer_group, entry_id)
 

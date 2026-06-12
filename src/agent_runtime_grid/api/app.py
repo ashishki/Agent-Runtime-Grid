@@ -1,9 +1,16 @@
+import os
+
 from fastapi import FastAPI
 
 from agent_runtime_grid.api.routes.jobs import router as jobs_router
+from agent_runtime_grid.config import validate_local_auth_boundary
 
 
 def create_app() -> FastAPI:
+    validate_local_auth_boundary(
+        api_token=os.environ.get("API_TOKEN"),
+        api_bind_host=os.environ.get("API_BIND_HOST", "127.0.0.1"),
+    )
     app = FastAPI(title="Agent Runtime Grid")
     app.include_router(jobs_router)
 

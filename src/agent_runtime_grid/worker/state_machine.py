@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
@@ -9,10 +10,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from agent_runtime_grid.domain.jobs import JobRecord
 from agent_runtime_grid.storage.finalization import FinalizationResult, finalize_job
 from agent_runtime_grid.storage.models import job_events_table, jobs_table
+from agent_runtime_grid.worker.lease import STALE_LEASE_ERROR_CLASS
 
 
 async def load_job_for_update(session: AsyncSession, job_id: UUID) -> JobRecord | None:
-    result = await session.execute(select(jobs_table).where(jobs_table.c.id == job_id))
+    result = await session.execute(
+        select(jobs_table).where(jobs_table.c.id == job_id).with_for_update()
+    )
     row = result.mappings().one_or_none()
     if row is None:
         return None
@@ -94,6 +98,37 @@ async def record_retry_scheduled(
     )
 
 
+async def record_stale_lease_recovered(
+    session: AsyncSession,
+    job: JobRecord,
+    *,
+    recovery_worker_id: str,
+    stale_consumer_name: str,
+    stale_entry_id: str,
+    stale_idle_ms: int,
+    delivery_count: int,
+    attempt_number: int,
+    next_attempt_number: int,
+) -> None:
+    await _record_state_event(
+        session,
+        job,
+        status="queued",
+        event_type="stale_lease_recovered",
+        event_data={
+            "worker_id": recovery_worker_id,
+            "stale_consumer_name": stale_consumer_name,
+            "stale_entry_id": stale_entry_id,
+            "stale_idle_ms": stale_idle_ms,
+            "delivery_count": delivery_count,
+            "attempt_number": attempt_number,
+            "next_attempt_number": next_attempt_number,
+            "error_class": STALE_LEASE_ERROR_CLASS,
+            "retryable": True,
+        },
+    )
+
+
 async def record_failed(
     session: AsyncSession,
     job: JobRecord,
@@ -154,6 +189,33 @@ async def record_cancelled(
             "worker_id": worker_id,
             "attempt_number": attempt_number,
             "cancelled_while": cancelled_while,
+        },
+    )
+
+
+async def record_budget_blocked(
+    session: AsyncSession,
+    job: JobRecord,
+    *,
+    worker_id: str,
+    attempt_number: int,
+    reason: str,
+    attempted_cost_usd: Decimal,
+    budget_limit_usd: Decimal,
+) -> FinalizationResult:
+    return await finalize_job(
+        session,
+        job,
+        status="failed",
+        event_type="budget_blocked",
+        event_data={
+            "worker_id": worker_id,
+            "attempt_number": attempt_number,
+            "reason": reason,
+            "attempted_cost_usd": str(attempted_cost_usd),
+            "budget_limit_usd": str(budget_limit_usd),
+            "error_class": "BudgetPolicyError",
+            "retryable": False,
         },
     )
 

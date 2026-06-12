@@ -36,6 +36,30 @@ class FailurePlan:
         )
         return cls(seed=seed, failures=failures)
 
+    @classmethod
+    def reliability_proof(
+        cls,
+        *,
+        seed: int,
+        count: int,
+        include_timeouts: bool,
+    ) -> FailurePlan:
+        modes = [
+            FailureMode.TRANSIENT,
+            FailureMode.PERMANENT,
+            FailureMode.DUPLICATE_SUBMISSION,
+        ]
+        if include_timeouts:
+            modes.append(FailureMode.TIMEOUT)
+
+        indexes = list(range(count))
+        random.Random(seed).shuffle(indexes)
+        failures = tuple(
+            InjectedFailure(index=index, mode=modes[position % len(modes)])
+            for position, index in enumerate(indexes)
+        )
+        return cls(seed=seed, failures=tuple(sorted(failures, key=lambda failure: failure.index)))
+
     def counts(self) -> dict[FailureMode, int]:
         counted = Counter(failure.mode for failure in self.failures)
         return {mode: counted.get(mode, 0) for mode in FailureMode}

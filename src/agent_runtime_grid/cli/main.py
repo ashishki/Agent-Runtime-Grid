@@ -201,3 +201,14 @@ def cleanup_command(
         reports_root=reports_root,
     ):
         typer.echo(f"removed: {removed}")
+
+
+from agent_runtime_grid.cli.benchmark import benchmark_app  # noqa: E402
+from agent_runtime_grid.cli.cost import app as cost_app  # noqa: E402
+from agent_runtime_grid.cli.failure_reports import app as failure_reports_app  # noqa: E402
+from agent_runtime_grid.cli.smoke import smoke_command  # noqa: E402
+
+app.add_typer(benchmark_app, name="benchmark")
+app.add_typer(cost_app, name="cost")
+app.add_typer(failure_reports_app, name="failure-reports")
+app.command("smoke")(smoke_command)

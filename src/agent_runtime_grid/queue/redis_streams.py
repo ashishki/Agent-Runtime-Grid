@@ -6,6 +6,7 @@ from redis.asyncio import Redis
 from redis.exceptions import ResponseError
 
 from agent_runtime_grid.queue.types import DeadLetterMessage, QueueJobMessage
+from agent_runtime_grid.worker.lease import StaleLease
 
 
 class RedisStreamsQueue:
@@ -60,6 +61,39 @@ class RedisStreamsQueue:
             for entry_id, fields in entries:
                 leased.append(_queue_message_from_stream_entry(entry_id, fields))
         return leased
+
+    async def find_stale_leases(
+        self,
+        *,
+        stale_after_ms: int,
+        count: int = 100,
+    ) -> list[StaleLease]:
+        await self.ensure_consumer_group()
+        pending_entries = await self._redis.xpending_range(
+            self.stream_name,
+            self.consumer_group,
+            min="-",
+            max="+",
+            count=count,
+            idle=stale_after_ms,
+        )
+        stale_entries: list[StaleLease] = []
+        for pending in pending_entries:
+            entry_id = pending["message_id"]
+            stream_entries = await self._redis.xrange(self.stream_name, min=entry_id, max=entry_id)
+            if not stream_entries:
+                continue
+
+            _stream_entry_id, fields = stream_entries[0]
+            stale_entries.append(
+                StaleLease(
+                    message=_queue_message_from_stream_entry(entry_id, fields),
+                    consumer_name=pending["consumer"],
+                    idle_ms=pending["time_since_delivered"],
+                    delivery_count=pending["times_delivered"],
+                )
+            )
+        return stale_entries
 
     async def acknowledge(self, entry_id: str) -> int:
         return await self._redis.xack(self.stream_name, self.consumer_group, entry_id)

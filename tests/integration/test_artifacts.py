@@ -138,4 +138,7 @@ async def test_artifact_metadata_records_hash_and_size(
     assert metadata_record.size_bytes == len(artifact_bytes)
     assert metadata_record.sha256 == hashlib.sha256(artifact_bytes).hexdigest()
     assert metadata_record.job_id == str(job.id)
+    assert metadata_record.run_id == str(job.run_id)
+    assert metadata_record.attempt_number == 1
+    assert metadata_record.input_digest == payload_sha256(job.payload)
     assert metadata_record.created_at.tzinfo is not None

@@ -42,6 +42,7 @@ The current implementation proves the core runtime mechanics:
 - Eval-Ground-Truth-Lab case execution through normal queue/workers
 - deterministic gdev-agent webhook evaluation jobs
 - failure-injection report pack generation
+- operator queue inspection, stale recovery, and pending lease renewal primitives
 
 Current baseline: `71 passed` with one upstream FastAPI/Starlette deprecation warning.
 
@@ -125,6 +126,7 @@ Core references:
 - `docs/SECURITY_BOUNDARIES.md` - API auth and local bind safety rules
 - `docs/OBSERVABILITY.md` - queue/backpressure metrics and report definitions
 - `docs/INTEGRATIONS.md` - Eval Lab and gdev-agent integration boundaries
+- `docs/OPERATIONS.md` - local operator commands for queue inspection and stale recovery
 - `reports/README.md` - report locations and expectations
 
 ## Operational Guarantees

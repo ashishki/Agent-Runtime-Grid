@@ -344,3 +344,21 @@ This file is not the source of truth for architecture or policy. Use it as a ret
 - Evidence collected: `docs/audit/PHASE8_FINAL_REVIEW.md`; `PATH=.venv/bin:$PATH python -m pytest -q`; `PATH=.venv/bin:$PATH ruff check`; `PATH=.venv/bin:$PATH ruff format --check`; `git diff --check`
 - Follow-ups: commit granular changes and push.
 - Notes for next agent: local baseline is 71 passing tests with one non-blocking FastAPI/Starlette deprecation warning.
+
+### 2026-06-12 - T27 - Lease Renewal and Operator Repair CLI
+
+- Scope: `src/agent_runtime_grid/queue/redis_streams.py`, `src/agent_runtime_grid/cli/operator.py`, `src/agent_runtime_grid/cli/main.py`, `tests/integration/test_operator_repair_cli.py`, `docs/OPERATIONS.md`, `docs/KNOWN_LIMITS.md`, `docs/FAILURE_MODES.md`, `docs/EVIDENCE_INDEX.md`, `docs/tasks.md`, `docs/CODEX_PROMPT.md`
+- Why this work happened: Continue from the completed T01-T26 roadmap by taking the next local T1 reliability gap from known limits: active lease renewal and operator repair commands.
+- Decisions applied: T27 remains local-only, uses Redis pending-entry state only as delivery evidence, keeps Postgres as the lifecycle authority, and renders operator output without raw payload or secret-like fields.
+- Evidence collected: pre-edit baseline `PATH=.venv/bin:$PATH python -m pytest -q` passed with 71 tests and one FastAPI/Starlette warning; `PATH=.venv/bin:$PATH ruff check`; `PATH=.venv/bin:$PATH ruff format --check`; `PATH=.venv/bin:$PATH python -m pytest tests/integration/test_operator_repair_cli.py -q`; `PATH=.venv/bin:$PATH ruff check src/agent_runtime_grid/cli/operator.py src/agent_runtime_grid/queue/redis_streams.py tests/integration/test_operator_repair_cli.py`.
+- Follow-ups: run full Phase 9 verification and review.
+- Notes for next agent: do not add live model calls or non-local network egress for T27.
+
+### 2026-06-12 - Phase 9 Boundary - Implementation Review
+
+- Scope: T27 implementation, acceptance tests, full baseline, quality gates, task ledger, local operator output safety, and runtime egress review.
+- Why this work happened: User requested deep review between phases before continuing.
+- Decisions applied: no blocking or warning findings remain; T27 is ready to commit and push.
+- Evidence collected: `docs/audit/PHASE9_IMPLEMENTATION_REVIEW.md`; `PATH=.venv/bin:$PATH python -m pytest tests/integration/test_operator_repair_cli.py -q`; `PATH=.venv/bin:$PATH python -m pytest -q`; `PATH=.venv/bin:$PATH ruff check`; `PATH=.venv/bin:$PATH ruff format --check`; `git diff --check`
+- Follow-ups: commit granular changes and push.
+- Notes for next agent: local baseline is 74 passing tests with one non-blocking FastAPI/Starlette deprecation warning.

@@ -942,3 +942,44 @@ Context-Refs:
   - docs/ARCHITECTURE.md
   - docs/EVIDENCE_INDEX.md
   - docs/FAILURE_MODES.md
+
+---
+
+## T27: Lease Renewal and Operator Repair CLI
+
+State: done
+Owner: codex
+Phase: 9
+Type: reliability
+Depends-On: T18, T19
+
+Objective: |
+  Add explicit Redis pending-entry lease renewal plus operator-facing inspect and recover commands so active workers can prevent false stale recovery and local operators can inspect and repair stale leased jobs without reaching into Redis manually.
+
+Acceptance-Criteria:
+  - id: AC-1
+    description: "Renewing a pending Redis Streams lease resets its idle age, prevents it from being detected as stale under the recovery threshold, and does not create lifecycle events."
+    test: "python -m pytest tests/integration/test_operator_repair_cli.py::test_renew_pending_lease_prevents_false_stale_recovery -q"
+  - id: AC-2
+    description: "The operator inspect command reports queue depth, pending lease count, stale lease count, and oldest pending age from runtime state without exposing raw payloads or secrets."
+    test: "python -m pytest tests/integration/test_operator_repair_cli.py::test_operator_inspect_reports_queue_state_without_payloads -q"
+  - id: AC-3
+    description: "The operator recover command invokes stale lease recovery, prints detected/requeued/DLQ/acknowledged counts, and leaves recovered work processable by a replacement worker."
+    test: "python -m pytest tests/integration/test_operator_repair_cli.py::test_operator_recover_requeues_stale_work_for_replacement_worker -q"
+
+Files:
+  - src/agent_runtime_grid/queue/redis_streams.py
+  - src/agent_runtime_grid/worker/lease.py
+  - src/agent_runtime_grid/worker/recovery.py
+  - src/agent_runtime_grid/cli/operator.py
+  - src/agent_runtime_grid/cli/main.py
+  - tests/integration/test_operator_repair_cli.py
+  - docs/OPERATIONS.md
+  - docs/KNOWN_LIMITS.md
+  - docs/EVIDENCE_INDEX.md
+
+Context-Refs:
+  - docs/ARCHITECTURE.md#runtime-and-isolation-model
+  - docs/IMPLEMENTATION_CONTRACT.md#job-state-is-database-authoritative
+  - docs/IMPLEMENTATION_CONTRACT.md#async-redis
+  - docs/FAILURE_MODES.md#stale-worker-lease

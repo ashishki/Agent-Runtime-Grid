@@ -59,6 +59,8 @@ Maintain this file for:
 | T25 failure report pack | integration tests, CLI check, reports | `tests/integration/test_failure_report_pack.py`, `src/agent_runtime_grid/cli/failure_reports.py`, `reports/failure-injection/*.md`, `docs/FAILURE_MODES.md` | Markdown reports for transient retry, timeout, cancellation, stale worker recovery, duplicate finalization prevention, and DLQ routing with lifecycle validation | 2026-06-12 | Yes |
 | T26 case study packaging | documentation | `docs/CASE_STUDY.md`, `docs/ARCHITECTURE_DIAGRAM.md`, `docs/KNOWN_LIMITS.md`, `README.md` | Problem, architecture, reliability, benchmark, failure, trade-offs, production changes, runtime diagram, integration points, and final packaging pointers | 2026-06-12 | Yes |
 | Phase 8 final review | review | `docs/audit/PHASE8_FINAL_REVIEW.md` | T25-T26 implementation, final T01-T26 task state, full baseline, quality gates, packaging checks, and residual risks | 2026-06-12 | Yes |
+| T27 lease renewal and operator repair CLI | integration tests, CLI check, documentation | `tests/integration/test_operator_repair_cli.py`, `src/agent_runtime_grid/queue/redis_streams.py`, `src/agent_runtime_grid/cli/operator.py`, `docs/OPERATIONS.md` | Redis pending-entry lease renewal, operator queue inspection without payload exposure, stale recovery command output, and replacement-worker completion after repair | 2026-06-12 | Yes |
+| Phase 9 implementation review | review | `docs/audit/PHASE9_IMPLEMENTATION_REVIEW.md` | T27 implementation, full baseline, quality gates, task ledger, local operator boundary, and residual risks | 2026-06-12 | Yes |
 | Phase 1 audit index | audit index | `docs/audit/AUDIT_INDEX.md` | Pointers to audit results | 2026-06-11 | Yes |
 
 ---

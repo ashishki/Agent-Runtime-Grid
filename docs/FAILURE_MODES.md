@@ -12,6 +12,8 @@ Scenario:
 4. The pending stream entry becomes stale after the configured lease timeout.
 5. Recovery inspects Redis pending entries, loads the matching job under a database lock, and decides from Postgres state.
 
+Active workers or local operators can renew a pending Redis Streams lease before the stale threshold. Renewal resets the pending entry idle age and does not write job lifecycle events. Recovery still treats Postgres as the source of truth if the lease later becomes stale.
+
 Expected behavior:
 
 - If the job is already terminal in Postgres, recovery acknowledges the stale stream entry and does not change lifecycle state.
@@ -23,6 +25,8 @@ Proof:
 - `tests/integration/test_stale_lease_recovery.py::test_stale_lease_is_detected`
 - `tests/integration/test_stale_lease_recovery.py::test_stale_job_requeues_and_completes_once`
 - `tests/integration/test_stale_lease_recovery.py::test_exhausted_stale_recovery_routes_to_dlq_without_duplicate_finalization`
+- `tests/integration/test_operator_repair_cli.py::test_renew_pending_lease_prevents_false_stale_recovery`
+- `tests/integration/test_operator_repair_cli.py::test_operator_recover_requeues_stale_work_for_replacement_worker`
 
 ## Transient Job Failure
 

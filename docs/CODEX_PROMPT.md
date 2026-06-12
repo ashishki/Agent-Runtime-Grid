@@ -12,8 +12,8 @@ This file is the project handoff state for Codex sessions. Repository files, tes
 
 - **Project:** Agent Runtime Grid
 - **Mode:** Standard
-- **Phase:** 8
-- **Baseline:** 71 passing tests after T25 (`python -m pytest -q`)
+- **Phase:** 9
+- **Baseline:** 74 passing tests after T27 (`python -m pytest -q`)
 - **Ruff:** configured in T01; `ruff check` and `ruff format --check` pass locally
 - **Last CI run:** not yet run
 - **Last updated:** 2026-06-12
@@ -57,14 +57,17 @@ Implementation agents do not self-review meaningful changes. Review findings are
 
 ## Next Task
 
-**Post-Review State**
+**Post-T27 State**
 
 Narrow task digest:
 
 - T01-T26 are complete and final Phase 8 review passed.
-- Next operator action is commit/push or future roadmap planning.
+- T27 is complete.
+- Redis pending-entry lease renewal and local operator inspect/recover CLI commands are implemented.
+- Next step is Phase 9 review, verification, granular commits, and push.
+- Keep Postgres as lifecycle authority and Redis as delivery state.
 - Do not add live model calls.
-- Current baseline is 71 passing tests after T26 and final review.
+- Current baseline is 74 passing tests after T27 and Phase 9 review.
 
 ---
 
@@ -419,5 +422,19 @@ none
 
 - Ran final implementation review for T25-T26 and final T01-T26 task state.
 - Review artifact: `docs/audit/PHASE8_FINAL_REVIEW.md`.
+- Result: PASS with no blocking findings.
+- Repository is ready for granular commits and push.
+
+### 2026-06-12 - T27 Lease Renewal and Operator Repair CLI
+
+- Added Redis pending-entry lease renewal with `RedisStreamsQueue.renew_pending_lease`.
+- Added `operator inspect` and `operator recover-stale` CLI commands.
+- Added operations docs and integration tests for false-stale prevention, payload-safe inspection, and recovery through a replacement worker.
+- Local baseline became 74 passing tests.
+
+### 2026-06-12 - Phase 9 Implementation Review
+
+- Ran Phase 9 implementation review for T27.
+- Review artifact: `docs/audit/PHASE9_IMPLEMENTATION_REVIEW.md`.
 - Result: PASS with no blocking findings.
 - Repository is ready for granular commits and push.

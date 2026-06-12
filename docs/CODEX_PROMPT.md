@@ -2,7 +2,7 @@
 
 Version: 1.0
 Date: 2026-06-12
-Phase: 8
+Phase: 10
 
 This file is the project handoff state for Codex sessions. Repository files, tests, audit reports, and CI results are authoritative.
 
@@ -12,8 +12,8 @@ This file is the project handoff state for Codex sessions. Repository files, tes
 
 - **Project:** Agent Runtime Grid
 - **Mode:** Standard
-- **Phase:** 9
-- **Baseline:** 74 passing tests after T27 (`python -m pytest -q`)
+- **Phase:** 10
+- **Baseline:** 77 passing tests after T28 (`python -m pytest -q`)
 - **Ruff:** configured in T01; `ruff check` and `ruff format --check` pass locally
 - **Last CI run:** not yet run
 - **Last updated:** 2026-06-12
@@ -57,17 +57,20 @@ Implementation agents do not self-review meaningful changes. Review findings are
 
 ## Next Task
 
-**Post-T27 State**
+**Post-T28 / Phase 10 State**
 
 Narrow task digest:
 
-- T01-T26 are complete and final Phase 8 review passed.
+- T01-T28 are complete; Phase 8, Phase 9, and Phase 10 reviews passed.
 - T27 is complete.
 - Redis pending-entry lease renewal and local operator inspect/recover CLI commands are implemented.
-- Next step is Phase 9 review, verification, granular commits, and push.
+- T28 is complete.
+- Worker-owned heartbeat renewal runs while active jobs execute.
+- Phase 10 review passed.
+- Next step is granular commits and push.
 - Keep Postgres as lifecycle authority and Redis as delivery state.
 - Do not add live model calls.
-- Current baseline is 74 passing tests after T27 and Phase 9 review.
+- Current baseline is 77 passing tests after T28 and Phase 10 review.
 
 ---
 
@@ -436,5 +439,19 @@ none
 
 - Ran Phase 9 implementation review for T27.
 - Review artifact: `docs/audit/PHASE9_IMPLEMENTATION_REVIEW.md`.
+- Result: PASS with no blocking findings.
+- Repository is ready for granular commits and push.
+
+### 2026-06-12 - T28 Automated Worker Heartbeat Lease Renewal
+
+- Added worker-owned Redis Streams lease heartbeat renewal during active job execution.
+- Heartbeat stops after runner completion and terminal acknowledgement path.
+- Disabled-heartbeat mode remains available for explicit failure injection.
+- Local baseline became 77 passing tests.
+
+### 2026-06-12 - Phase 10 Implementation Review
+
+- Ran Phase 10 implementation review for T28.
+- Review artifact: `docs/audit/PHASE10_IMPLEMENTATION_REVIEW.md`.
 - Result: PASS with no blocking findings.
 - Repository is ready for granular commits and push.

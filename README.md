@@ -43,8 +43,9 @@ The current implementation proves the core runtime mechanics:
 - deterministic gdev-agent webhook evaluation jobs
 - failure-injection report pack generation
 - operator queue inspection, stale recovery, and pending lease renewal primitives
+- automated worker heartbeat renewal for active long-running jobs
 
-Current baseline: `71 passed` with one upstream FastAPI/Starlette deprecation warning.
+Current baseline: `77 passed` with one upstream FastAPI/Starlette deprecation warning.
 
 ## Quickstart
 

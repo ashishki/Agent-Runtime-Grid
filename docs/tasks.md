@@ -983,3 +983,42 @@ Context-Refs:
   - docs/IMPLEMENTATION_CONTRACT.md#job-state-is-database-authoritative
   - docs/IMPLEMENTATION_CONTRACT.md#async-redis
   - docs/FAILURE_MODES.md#stale-worker-lease
+
+---
+
+## T28: Automated Worker Heartbeat Lease Renewal
+
+State: done
+Owner: codex
+Phase: 10
+Type: reliability
+Depends-On: T18, T27
+
+Objective: |
+  Add worker-owned heartbeat renewal for active Redis Streams leases so long-running jobs do not become stale while the worker is alive, without changing Postgres lifecycle authority or writing heartbeat lifecycle events.
+
+Acceptance-Criteria:
+  - id: AC-1
+    description: "A worker processing a long-running job renews the pending Redis Streams lease often enough that stale recovery with a threshold above the heartbeat interval detects no stale lease while the job is active."
+    test: "python -m pytest tests/integration/test_worker_heartbeat.py::test_worker_heartbeat_prevents_false_stale_recovery_for_long_job -q"
+  - id: AC-2
+    description: "Heartbeat renewal stops after terminal completion and the Redis entry is acknowledged, leaving no pending lease and no heartbeat lifecycle events."
+    test: "python -m pytest tests/integration/test_worker_heartbeat.py::test_heartbeat_stops_after_terminal_acknowledgement -q"
+  - id: AC-3
+    description: "Disabling heartbeat preserves existing stale recovery behavior for a worker that is still running longer than the stale threshold."
+    test: "python -m pytest tests/integration/test_worker_heartbeat.py::test_disabled_heartbeat_preserves_stale_recovery_behavior -q"
+
+Files:
+  - src/agent_runtime_grid/worker/loop.py
+  - src/agent_runtime_grid/queue/redis_streams.py
+  - tests/integration/test_worker_heartbeat.py
+  - docs/OPERATIONS.md
+  - docs/KNOWN_LIMITS.md
+  - docs/EVIDENCE_INDEX.md
+
+Context-Refs:
+  - docs/ARCHITECTURE.md#runtime-and-isolation-model
+  - docs/ARCHITECTURE.md#data-flow
+  - docs/IMPLEMENTATION_CONTRACT.md#job-state-is-database-authoritative
+  - docs/IMPLEMENTATION_CONTRACT.md#async-redis
+  - docs/FAILURE_MODES.md#worker-crash-after-lease

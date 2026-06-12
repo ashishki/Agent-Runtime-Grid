@@ -61,6 +61,8 @@ Maintain this file for:
 | Phase 8 final review | review | `docs/audit/PHASE8_FINAL_REVIEW.md` | T25-T26 implementation, final T01-T26 task state, full baseline, quality gates, packaging checks, and residual risks | 2026-06-12 | Yes |
 | T27 lease renewal and operator repair CLI | integration tests, CLI check, documentation | `tests/integration/test_operator_repair_cli.py`, `src/agent_runtime_grid/queue/redis_streams.py`, `src/agent_runtime_grid/cli/operator.py`, `docs/OPERATIONS.md` | Redis pending-entry lease renewal, operator queue inspection without payload exposure, stale recovery command output, and replacement-worker completion after repair | 2026-06-12 | Yes |
 | Phase 9 implementation review | review | `docs/audit/PHASE9_IMPLEMENTATION_REVIEW.md` | T27 implementation, full baseline, quality gates, task ledger, local operator boundary, and residual risks | 2026-06-12 | Yes |
+| T28 automated worker heartbeat lease renewal | integration tests, documentation | `tests/integration/test_worker_heartbeat.py`, `src/agent_runtime_grid/worker/loop.py`, `docs/OPERATIONS.md`, `docs/FAILURE_MODES.md` | Active worker heartbeat prevents false stale recovery for long jobs, stops after terminal acknowledgement, and disabled heartbeat preserves stale recovery behavior for failure injection | 2026-06-12 | Yes |
+| Phase 10 implementation review | review | `docs/audit/PHASE10_IMPLEMENTATION_REVIEW.md` | T28 implementation, heartbeat false-stale prevention, terminal shutdown behavior, disabled-heartbeat failure path, full baseline, and quality gates | 2026-06-12 | Yes |
 | Phase 1 audit index | audit index | `docs/audit/AUDIT_INDEX.md` | Pointers to audit results | 2026-06-11 | Yes |
 
 ---

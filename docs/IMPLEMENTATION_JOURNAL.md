@@ -362,3 +362,21 @@ This file is not the source of truth for architecture or policy. Use it as a ret
 - Evidence collected: `docs/audit/PHASE9_IMPLEMENTATION_REVIEW.md`; `PATH=.venv/bin:$PATH python -m pytest tests/integration/test_operator_repair_cli.py -q`; `PATH=.venv/bin:$PATH python -m pytest -q`; `PATH=.venv/bin:$PATH ruff check`; `PATH=.venv/bin:$PATH ruff format --check`; `git diff --check`
 - Follow-ups: commit granular changes and push.
 - Notes for next agent: local baseline is 74 passing tests with one non-blocking FastAPI/Starlette deprecation warning.
+
+### 2026-06-12 - T28 - Automated Worker Heartbeat Lease Renewal
+
+- Scope: `src/agent_runtime_grid/worker/loop.py`, `tests/integration/test_worker_heartbeat.py`, `docs/OPERATIONS.md`, `docs/KNOWN_LIMITS.md`, `docs/FAILURE_MODES.md`, `docs/EVIDENCE_INDEX.md`, `docs/tasks.md`, `docs/CODEX_PROMPT.md`
+- Why this work happened: Close the remaining local worker reliability gap where a live long-running worker can appear stale if no pending-entry renewal occurs during execution.
+- Decisions applied: T28 keeps Redis as delivery state and Postgres as lifecycle authority; heartbeat renewal runs only while the runner is active, stops after terminal handling, does not create lifecycle events, and does not enable new network egress.
+- Evidence collected: pre-edit baseline `PATH=.venv/bin:$PATH python -m pytest -q` passed with 74 tests and one FastAPI/Starlette warning; `PATH=.venv/bin:$PATH python -m pytest tests/integration/test_worker_heartbeat.py -q`; `PATH=.venv/bin:$PATH ruff check src/agent_runtime_grid/worker/loop.py tests/integration/test_worker_heartbeat.py`.
+- Follow-ups: run full Phase 10 verification and review.
+- Notes for next agent: do not add live model calls or non-local network egress for T28.
+
+### 2026-06-12 - Phase 10 Boundary - Implementation Review
+
+- Scope: T28 implementation, heartbeat acceptance tests, neighboring operator repair coverage, full baseline, quality gates, task ledger, local runtime boundary, and runtime egress review.
+- Why this work happened: User requested deep review between phases before continuing.
+- Decisions applied: no blocking or warning findings remain; T28 is ready to commit and push.
+- Evidence collected: `docs/audit/PHASE10_IMPLEMENTATION_REVIEW.md`; `PATH=.venv/bin:$PATH python -m pytest tests/integration/test_worker_heartbeat.py tests/integration/test_operator_repair_cli.py -q`; `PATH=.venv/bin:$PATH python -m pytest -q`; `PATH=.venv/bin:$PATH ruff check`; `PATH=.venv/bin:$PATH ruff format --check`; `git diff --check`
+- Follow-ups: commit granular changes and push.
+- Notes for next agent: local baseline is 77 passing tests with one non-blocking FastAPI/Starlette deprecation warning.

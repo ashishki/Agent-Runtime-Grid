@@ -25,7 +25,7 @@ v1 targets at-least-once delivery with idempotent finalization.
 
 - The real smoke command runs end to end locally, but it is not a remote deployment proof.
 - The 500-job reliability proof runs end to end locally, but it is still local T1 evidence rather than a production scale claim.
-- Worker crash, Redis pending-entry lease renewal, and local operator repair commands are implemented, but automated heartbeat renewal during long job execution remains future work.
+- Worker crash, Redis pending-entry lease renewal, automated worker heartbeat renewal during long job execution, and local operator repair commands are implemented.
 - Backpressure metrics are runtime-derived from Redis Streams and Postgres event timing, but dashboarding and alert policy are still local documentation paths.
 - Artifact integrity is validated in reports, but durable object storage beyond local filesystem is not implemented.
 - Cost telemetry and budget gates are implemented for local runtime policy, but recurring live provider usage still requires explicit approval.
@@ -48,7 +48,7 @@ Before remote or trusted operation, the project would need:
 
 - stronger auth and deployment configuration
 - durable artifact storage beyond local filesystem
-- automated worker heartbeat renewal during long job execution
+- remote worker supervision and orchestration
 - backpressure and queue lag dashboards
 - explicit egress and secret allowlists per job type
 - production migration workflow

@@ -68,10 +68,15 @@ Recovery rules:
 
 Runtime code can renew a pending Redis Streams lease with `RedisStreamsQueue.renew_pending_lease`. Renewal resets the pending entry idle age, prevents false stale recovery under the configured threshold, and does not write lifecycle events.
 
+Workers automatically run a heartbeat renewal task while an active job runner is executing. The task stops after the runner finishes, then normal terminal handling acknowledges the Redis entry. Set `lease_renewal_interval_seconds=None` on `Worker` only for tests or explicit failure-injection scenarios.
+
 Executable proof:
 
 ```bash
-PATH=.venv/bin:$PATH python -m pytest tests/integration/test_operator_repair_cli.py -q
+PATH=.venv/bin:$PATH python -m pytest \
+  tests/integration/test_operator_repair_cli.py \
+  tests/integration/test_worker_heartbeat.py \
+  -q
 ```
 
 ## Boundaries

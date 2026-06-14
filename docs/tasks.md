@@ -1022,3 +1022,52 @@ Context-Refs:
   - docs/IMPLEMENTATION_CONTRACT.md#job-state-is-database-authoritative
   - docs/IMPLEMENTATION_CONTRACT.md#async-redis
   - docs/FAILURE_MODES.md#worker-crash-after-lease
+
+---
+
+## T29: Cross-Project Runtime Proof
+
+State: done
+Owner: codex
+Phase: 11
+Type: integration
+Depends-On: T23, T24, T26, T28
+
+Objective: |
+  Add a full-stack proof command that ingests ready Eval-Ground-Truth-Lab dataset/report artifacts and ready gdev-agent artifacts, runs selected cases through Agent Runtime Grid as batch jobs, and writes a runtime reliability report with cross-project links.
+
+Acceptance-Criteria:
+  - id: AC-1
+    description: "The full-stack proof runner validates existing Eval Lab report, gdev-agent artifact, and dataset paths before submitting Grid jobs."
+    test: "python -m pytest tests/integration/test_full_stack_proof.py::test_full_stack_proof_validates_cross_project_artifacts -q"
+  - id: AC-2
+    description: "The proof run submits Eval Lab/gdev cases as normal `gdev_webhook_eval` jobs, processes them through Redis Streams and workers, and produces valid runtime artifacts."
+    test: "python -m pytest tests/integration/test_full_stack_proof.py::test_full_stack_proof_runs_cases_through_grid -q"
+  - id: AC-3
+    description: "The generated report cross-links Eval Lab report path, gdev-agent artifact path, Grid run ID, lifecycle counts, artifact integrity, queue metrics, and known limits without exposing raw secret-like payload fields."
+    test: "python -m pytest tests/integration/test_full_stack_proof.py::test_full_stack_report_cross_links_quality_and_runtime_evidence -q"
+
+Files:
+  - src/agent_runtime_grid/cli/proof.py
+  - src/agent_runtime_grid/cli/main.py
+  - tests/integration/test_full_stack_proof.py
+  - docs/INTEGRATIONS.md
+  - docs/CASE_STUDY.md
+  - docs/EVIDENCE_INDEX.md
+  - README.md
+  - reports/README.md
+  - reports/full-stack/.gitkeep
+
+Cost-Budget:
+  scope: workflow
+  max_cost_usd: 0
+  max_model_calls: 0
+  max_tool_calls: n/a
+  max_retries: 2
+  approval_required_when: "live gdev-agent HTTP adapter, external egress, live model mode, or broader worker secret scope"
+
+Context-Refs:
+  - docs/ARCHITECTURE.md#external-integrations
+  - docs/IMPLEMENTATION_CONTRACT.md#stub-mode-is-default
+  - docs/IMPLEMENTATION_CONTRACT.md#worker-network-and-secret-scope
+  - docs/INTEGRATIONS.md

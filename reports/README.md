@@ -12,6 +12,7 @@ Committed files in this directory describe report expectations and preserve empt
 - `tests/integration/test_stale_lease_recovery.py` - executable stale-worker recovery proof produced by T18.
 - `reports/ai_cost_rollup.md` - planned cost rollup output path used by the cost CLI.
 - `reports/failure-injection/*.md` - failure scenario report pack produced by T25.
+- `reports/full-stack/runtime_report.md` - cross-project runtime proof output produced by T29.
 
 ## Planned Reports
 

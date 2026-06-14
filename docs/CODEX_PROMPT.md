@@ -1,8 +1,8 @@
 # CODEX_PROMPT.md
 
 Version: 1.0
-Date: 2026-06-12
-Phase: 10
+Date: 2026-06-14
+Phase: 11
 
 This file is the project handoff state for Codex sessions. Repository files, tests, audit reports, and CI results are authoritative.
 
@@ -12,11 +12,11 @@ This file is the project handoff state for Codex sessions. Repository files, tes
 
 - **Project:** Agent Runtime Grid
 - **Mode:** Standard
-- **Phase:** 10
-- **Baseline:** 77 passing tests after T28 (`python -m pytest -q`)
+- **Phase:** 11
+- **Baseline:** 80 passing tests after T29 on isolated Grid test services (`python -m pytest -q`)
 - **Ruff:** configured in T01; `ruff check` and `ruff format --check` pass locally
 - **Last CI run:** not yet run
-- **Last updated:** 2026-06-12
+- **Last updated:** 2026-06-14
 - **Session tokens (approx):** not tracked
 - **Cumulative phase tokens (approx):** not tracked
 - **Session cost (approx):** not tracked
@@ -57,20 +57,22 @@ Implementation agents do not self-review meaningful changes. Review findings are
 
 ## Next Task
 
-**Post-T28 / Phase 10 State**
+**No active task**
 
 Narrow task digest:
 
 - T01-T28 are complete; Phase 8, Phase 9, and Phase 10 reviews passed.
+- T29 is complete.
 - T27 is complete.
 - Redis pending-entry lease renewal and local operator inspect/recover CLI commands are implemented.
 - T28 is complete.
 - Worker-owned heartbeat renewal runs while active jobs execute.
 - Phase 10 review passed.
-- Next step is granular commits and push.
+- `proof full-stack` ingests Eval Lab + gdev-agent artifact paths and writes Grid reliability reporting.
 - Keep Postgres as lifecycle authority and Redis as delivery state.
 - Do not add live model calls.
-- Current baseline is 77 passing tests after T28 and Phase 10 review.
+- Current local checks use `DATABASE_URL=...55432` and `REDIS_URL=...56379` because gdev-agent owns default local ports.
+- Candidate next work: remote-server runbook/packaging, durable artifact backend, or live/local adapter expansion only with explicit egress and budget approval.
 
 ---
 
@@ -453,5 +455,19 @@ none
 
 - Ran Phase 10 implementation review for T28.
 - Review artifact: `docs/audit/PHASE10_IMPLEMENTATION_REVIEW.md`.
+- Result: PASS with no blocking findings.
+- Repository is ready for granular commits and push.
+
+### 2026-06-14 - T29 Cross-Project Runtime Proof
+
+- Added `proof full-stack` for ready Eval Lab dataset/report paths and ready gdev-agent artifact paths.
+- The command validates inputs, submits selected cases as `gdev_webhook_eval` jobs, runs Redis Streams workers, writes artifacts and Eval-compatible result JSON, and renders cross-linked runtime evidence.
+- Default behavior remains deterministic and local with no live model calls or live gdev-agent HTTP call.
+- Local baseline became 80 passing tests on isolated Grid services because adjacent gdev-agent services own default local ports.
+
+### 2026-06-14 - Phase 11 Implementation Review
+
+- Ran Phase 11 implementation review for T29.
+- Review artifact: `docs/audit/PHASE11_IMPLEMENTATION_REVIEW.md`.
 - Result: PASS with no blocking findings.
 - Repository is ready for granular commits and push.

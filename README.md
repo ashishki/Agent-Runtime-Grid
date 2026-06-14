@@ -41,11 +41,13 @@ The current implementation proves the core runtime mechanics:
 - batch CLI helpers and benchmark report rendering
 - Eval-Ground-Truth-Lab case execution through normal queue/workers
 - deterministic gdev-agent webhook evaluation jobs
+- full-stack proof command that ingests ready Eval Lab and gdev-agent artifacts,
+  runs selected cases through Grid workers, and writes cross-linked runtime evidence
 - failure-injection report pack generation
 - operator queue inspection, stale recovery, and pending lease renewal primitives
 - automated worker heartbeat renewal for active long-running jobs
 
-Current baseline: `77 passed` with one upstream FastAPI/Starlette deprecation warning.
+Current baseline: `80 passed` with one upstream FastAPI/Starlette deprecation warning.
 
 ## Quickstart
 
@@ -100,6 +102,20 @@ PATH=.venv/bin:$PATH python -m agent_runtime_grid.cli benchmark v1-proof \
 ```
 
 The smoke and 500-job reliability proof commands now run end to end through local Redis Streams, workers, Postgres state, artifacts, and report validation.
+
+Run the cross-project proof once Eval Lab and gdev-agent artifacts exist:
+
+```bash
+PATH=.venv/bin:$PATH python -m agent_runtime_grid.cli proof full-stack \
+  --eval-lab-dataset ../Eval-Ground-Truth-Lab/datasets/gdev_agent/triage_v1.jsonl \
+  --eval-lab-report ../Eval-Ground-Truth-Lab/reports/gdev-agent/baseline_report.md \
+  --gdev-artifact ../gdev-agent/eval/results/last_run.json \
+  --jobs 20 \
+  --workers 4 \
+  --report reports/full-stack/runtime_report.md
+```
+
+This submits selected Eval Lab/gdev cases as normal Grid jobs, dispatches them through Redis Streams, completes them with workers, writes artifacts and Eval-compatible result JSON, then renders one report linking quality evidence and runtime reliability evidence.
 
 ## Architecture
 
@@ -157,6 +173,7 @@ Planned proof gaps are tracked in `docs/tasks.md`:
 - T23 Eval-Ground-Truth-Lab integration - implemented
 - T24 gdev-agent batch simulation - implemented
 - T25 failure-injection report pack - implemented
+- T29 cross-project runtime proof - implemented
 
 ## Reports
 

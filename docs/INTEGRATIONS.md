@@ -48,3 +48,31 @@ Runtime behavior:
 Evidence:
 
 - `tests/integration/test_gdev_agent_integration.py`
+
+## Full-Stack Proof
+
+Command:
+
+```bash
+python -m agent_runtime_grid.cli proof full-stack \
+  --eval-lab-dataset ../Eval-Ground-Truth-Lab/datasets/gdev_agent/triage_v1.jsonl \
+  --eval-lab-report ../Eval-Ground-Truth-Lab/reports/gdev-agent/baseline_report.md \
+  --gdev-artifact ../gdev-agent/eval/results/last_run.json \
+  --jobs 20 \
+  --workers 4 \
+  --report reports/full-stack/runtime_report.md
+```
+
+Runtime behavior:
+
+- The command validates the Eval Lab dataset path, Eval Lab quality report path, and gdev-agent artifact path before submitting work.
+- Selected Eval Lab cases are converted into deterministic `gdev_webhook_eval` jobs.
+- Jobs run through the same Redis Streams queue, worker lifecycle, Postgres state, artifact store, and report validation as other Grid workloads.
+- The generated report links the Eval Lab quality report, the gdev-agent artifact path, the Grid run ID, lifecycle counts, artifact integrity rows, queue/backpressure metrics, and known limits.
+- The default proof does not call gdev-agent over HTTP and does not make live model calls.
+- Runtime artifacts store request hashes and sanitized responses, not raw secret-like request fields.
+
+Evidence:
+
+- `tests/integration/test_full_stack_proof.py`
+- `src/agent_runtime_grid/cli/proof.py`

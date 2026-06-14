@@ -380,3 +380,30 @@ This file is not the source of truth for architecture or policy. Use it as a ret
 - Evidence collected: `docs/audit/PHASE10_IMPLEMENTATION_REVIEW.md`; `PATH=.venv/bin:$PATH python -m pytest tests/integration/test_worker_heartbeat.py tests/integration/test_operator_repair_cli.py -q`; `PATH=.venv/bin:$PATH python -m pytest -q`; `PATH=.venv/bin:$PATH ruff check`; `PATH=.venv/bin:$PATH ruff format --check`; `git diff --check`
 - Follow-ups: commit granular changes and push.
 - Notes for next agent: local baseline is 77 passing tests with one non-blocking FastAPI/Starlette deprecation warning.
+
+### 2026-06-14 - T29 - Cross-Project Runtime Proof
+
+- Scope: `docs/tasks.md`, `docs/CODEX_PROMPT.md`
+- Why this work happened: gdev-agent and Eval-Ground-Truth-Lab now have ready artifacts, so Grid needs to prove it can run and cross-link those workloads as the execution runtime layer.
+- Decisions applied: T29 stays local-first and stub/default; it ingests existing artifact paths and runs deterministic Grid jobs without live model calls or broader worker egress.
+- Evidence collected: initial baseline with default ports failed because `gdev-agent` owns local Postgres/Redis ports; isolated Grid test services were started on `127.0.0.1:55432` and `127.0.0.1:56379`.
+- Follow-ups: run baseline on isolated Grid services, implement full-stack proof, focused tests, Phase 11 review, commits, and push.
+- Notes for next agent: use explicit `DATABASE_URL=postgresql+asyncpg://agent_runtime_grid:local-dev-password@localhost:55432/agent_runtime_grid` and `REDIS_URL=redis://localhost:56379/0` while gdev-agent services occupy default ports.
+
+### 2026-06-14 - T29 - Cross-Project Runtime Proof Complete
+
+- Scope: `src/agent_runtime_grid/cli/proof.py`, `src/agent_runtime_grid/cli/main.py`, `tests/integration/test_full_stack_proof.py`, `README.md`, `docs/INTEGRATIONS.md`, `docs/CASE_STUDY.md`, `docs/EVIDENCE_INDEX.md`, `docs/tasks.md`, `docs/CODEX_PROMPT.md`, `reports/README.md`, `reports/full-stack/.gitkeep`
+- Why this work happened: Close the Grid side of the ready gdev-agent and Eval Lab artifact flow with a command that validates those artifacts, runs selected cases through Grid, and writes cross-linked runtime evidence.
+- Decisions applied: `proof full-stack` remains deterministic and local by default; selected Eval Lab cases become `gdev_webhook_eval` jobs, not live HTTP calls; report evidence uses artifact metadata and request hashes instead of raw request fields.
+- Evidence collected: `DATABASE_URL=postgresql+asyncpg://agent_runtime_grid:local-dev-password@localhost:55432/agent_runtime_grid REDIS_URL=redis://localhost:56379/0 PATH=.venv/bin:$PATH python -m pytest tests/integration/test_full_stack_proof.py -q`; `PATH=.venv/bin:$PATH python -m agent_runtime_grid.cli proof full-stack --database-url postgresql+asyncpg://agent_runtime_grid:local-dev-password@localhost:55432/agent_runtime_grid --redis-url redis://localhost:56379/0 --eval-lab-dataset ../Eval-Ground-Truth-Lab/datasets/gdev_agent/triage_v1.jsonl --eval-lab-report ../Eval-Ground-Truth-Lab/reports/gdev-agent/baseline_report.md --gdev-artifact ../gdev-agent/eval/results/last_run.json --jobs 3 --workers 2 --artifact-root /tmp/arg-full-stack-artifacts --report /tmp/arg-full-stack/runtime_report.md`; `PATH=.venv/bin:$PATH ruff check`; `PATH=.venv/bin:$PATH ruff format --check`; `git diff --check`; `DATABASE_URL=postgresql+asyncpg://agent_runtime_grid:local-dev-password@localhost:55432/agent_runtime_grid REDIS_URL=redis://localhost:56379/0 PATH=.venv/bin:$PATH python -m pytest -q`
+- Follow-ups: remote-server runbook or live/local adapter expansion only as a separate task with explicit egress and budget approval.
+- Notes for next agent: local baseline is 80 passing tests with one non-blocking FastAPI/Starlette deprecation warning; use explicit isolated service URLs when adjacent projects own the default ports.
+
+### 2026-06-14 - Phase 11 Boundary - Implementation Review
+
+- Scope: T29 implementation, cross-project artifact validation, full-stack proof report, isolated-port baseline, quality gates, local runtime boundary, and runtime egress review.
+- Why this work happened: User requested deep review between phases before continuing.
+- Decisions applied: no blocking or warning findings remain; T29 is ready to commit and push.
+- Evidence collected: `docs/audit/PHASE11_IMPLEMENTATION_REVIEW.md`; T29 acceptance tests; manual adjacent-artifact proof command; full baseline; ruff gates; diff check; task ledger scan; prohibited framing scan; runtime egress review.
+- Follow-ups: commit granular changes and push.
+- Notes for next agent: generated full-stack reports remain ignored by git; committed docs describe command usage and evidence paths only.

@@ -58,7 +58,7 @@ python -m agent_runtime_grid.cli benchmark v1-proof \
   --report reports/v1/reliability_report.md
 ```
 
-Current local baseline: 71 passing tests with one upstream FastAPI/Starlette deprecation warning.
+Current local baseline: 80 passing tests with one upstream FastAPI/Starlette deprecation warning.
 
 ## Failure
 
@@ -86,6 +86,20 @@ Eval-Ground-Truth-Lab integration uses `eval_lab_case` jobs. Runtime Grid loads 
 
 gdev-agent integration uses `gdev_webhook_eval` jobs. Runtime Grid runs deterministic local webhook evaluation cases through the same queue and worker path, stores request hashes and sanitized responses, writes normalized fields, and cross-links Eval Lab-compatible result output.
 
+The full-stack proof command connects the ready artifacts from both adjacent projects:
+
+```bash
+python -m agent_runtime_grid.cli proof full-stack \
+  --eval-lab-dataset ../Eval-Ground-Truth-Lab/datasets/gdev_agent/triage_v1.jsonl \
+  --eval-lab-report ../Eval-Ground-Truth-Lab/reports/gdev-agent/baseline_report.md \
+  --gdev-artifact ../gdev-agent/eval/results/last_run.json \
+  --jobs 20 \
+  --workers 4 \
+  --report reports/full-stack/runtime_report.md
+```
+
+That command validates the Eval Lab and gdev-agent evidence paths, submits selected cases as Grid jobs, runs them through Redis Streams and workers, writes artifacts and Eval-compatible result JSON, and produces one runtime report that cross-links quality evidence with lifecycle, artifact, idempotency, and queue/backpressure evidence.
+
 ## Trade-offs
 
 This project is intentionally not a Temporal, Ray, Kubernetes, Airflow, or managed batch platform replacement. It proves local T1 reliability mechanics and evidence paths, not remote production orchestration.
@@ -99,7 +113,7 @@ Before remote or trusted production operation, the runtime would need:
 - deployment-grade auth and configuration management
 - remote CI evidence for full 500-job reliability proof
 - durable artifact storage beyond local filesystem
-- stronger worker lease renewal and operational repair commands
+- production-grade worker process supervision and runbook automation
 - explicit egress and secret allowlists per job type
 - migration workflow and schema versioning
 - dashboards and runbooks for on-call operation

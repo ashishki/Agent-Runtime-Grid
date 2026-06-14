@@ -1,7 +1,7 @@
 # Evidence Index - Agent Runtime Grid
 
 Version: 1.0
-Last updated: 2026-06-12
+Last updated: 2026-06-14
 
 Purpose:
 
@@ -63,6 +63,8 @@ Maintain this file for:
 | Phase 9 implementation review | review | `docs/audit/PHASE9_IMPLEMENTATION_REVIEW.md` | T27 implementation, full baseline, quality gates, task ledger, local operator boundary, and residual risks | 2026-06-12 | Yes |
 | T28 automated worker heartbeat lease renewal | integration tests, documentation | `tests/integration/test_worker_heartbeat.py`, `src/agent_runtime_grid/worker/loop.py`, `docs/OPERATIONS.md`, `docs/FAILURE_MODES.md` | Active worker heartbeat prevents false stale recovery for long jobs, stops after terminal acknowledgement, and disabled heartbeat preserves stale recovery behavior for failure injection | 2026-06-12 | Yes |
 | Phase 10 implementation review | review | `docs/audit/PHASE10_IMPLEMENTATION_REVIEW.md` | T28 implementation, heartbeat false-stale prevention, terminal shutdown behavior, disabled-heartbeat failure path, full baseline, and quality gates | 2026-06-12 | Yes |
+| T29 cross-project runtime proof | integration tests, CLI command, documentation | `tests/integration/test_full_stack_proof.py`, `src/agent_runtime_grid/cli/proof.py`, `docs/INTEGRATIONS.md`, `README.md` | Ready Eval Lab dataset/report and gdev-agent artifact path validation, selected case submission as Grid jobs, Redis Streams worker processing, artifact integrity, queue/backpressure report fields, and secret-like request field exclusion | 2026-06-14 | Yes |
+| Phase 11 implementation review | review | `docs/audit/PHASE11_IMPLEMENTATION_REVIEW.md` | T29 implementation, cross-project artifact validation, full-stack proof report, isolated-port baseline, quality gates, local/no-egress boundary, and residual risks | 2026-06-14 | Yes |
 | Phase 1 audit index | audit index | `docs/audit/AUDIT_INDEX.md` | Pointers to audit results | 2026-06-11 | Yes |
 
 ---
@@ -76,6 +78,7 @@ Maintain this file for:
 | 500-job reliability proof | `reports/v1/reliability_report.md` | implemented in T17; backpressure section added in T19; artifact integrity rows added in T21 | Includes lifecycle, retry, timeout, DLQ, idempotency, artifact integrity, queue lag, execution duration, backpressure, and cost evidence. Contents ignored by git. |
 | Stale lease recovery proof | `tests/integration/test_stale_lease_recovery.py` | implemented in T18; report included in T25 | Executable proof for worker crash after lease plus human-readable failure report coverage. |
 | Failure injection report pack | `reports/failure-injection/*.md` | implemented in T25 | Includes scenario, command, expected behavior, actual lifecycle, event trail, metrics, artifacts, and known limits. |
+| Full-stack runtime proof | `reports/full-stack/runtime_report.md` | implemented in T29 | Generated from selected Eval Lab/gdev cases run through Grid; contents ignored by git. |
 
 ---
 

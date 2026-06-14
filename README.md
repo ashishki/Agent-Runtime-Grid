@@ -123,8 +123,23 @@ through Redis Streams, completes them with workers, writes artifacts and
 Eval-compatible result JSON, then renders one report linking quality evidence
 and runtime reliability evidence. This is `full-stack-artifact-proof`: it uses
 ready artifacts and deterministic jobs by default. It does not call live
-gdev-agent over HTTP. A future `full-stack-live-local` mode would make workers
-trigger Eval Lab or gdev-agent HTTP execution end to end.
+gdev-agent over HTTP.
+
+Optionally run the live-local proof against a locally running `gdev-agent` in
+deterministic demo mode. The webhook secret is read from the named environment
+variable; it is not stored in the job payload or report:
+
+```bash
+PATH=.venv/bin:$PATH python -m agent_runtime_grid.cli proof full-stack-live-local \
+  --eval-lab-dataset ../Eval-Ground-Truth-Lab/datasets/gdev_agent/triage_v1.jsonl \
+  --eval-lab-report ../Eval-Ground-Truth-Lab/reports/gdev-agent/baseline_report.md \
+  --gdev-artifact ../gdev-agent/eval/results/last_run.json \
+  --gdev-base-url http://localhost:8000 \
+  --gdev-webhook-secret-env GDEV_AGENT_WEBHOOK_SECRET \
+  --jobs 20 \
+  --workers 4 \
+  --report reports/full-stack/live_local_runtime_report.md
+```
 
 ## Architecture
 
@@ -185,6 +200,7 @@ Planned proof gaps are tracked in `docs/tasks.md`:
 - T24 gdev-agent batch simulation - implemented
 - T25 failure-injection report pack - implemented
 - T29 cross-project runtime proof - implemented
+- T31 full-stack live-local proof - implemented
 
 ## Reports
 
@@ -202,6 +218,7 @@ Committed snapshots:
 - `docs/evidence/runtime-smoke-100.md`
 - `docs/evidence/runtime-reliability-500.md`
 - `docs/evidence/full-stack-artifact-proof.md`
+- `docs/evidence/full-stack-live-local.md`
 - `docs/evidence/failure-injection-pack-summary.md`
 
 ## Known Limits

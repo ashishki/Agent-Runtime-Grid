@@ -12,9 +12,12 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from agent_runtime_grid.cli.proof import (
     FullStackProofError,
+    LiveLocalGdevConfig,
     run_full_stack_proof,
     validate_cross_project_inputs,
 )
+from agent_runtime_grid.jobs import gdev_agent
+from agent_runtime_grid.jobs.gdev_agent import LocalGdevHttpResponse
 from agent_runtime_grid.queue.redis_streams import RedisStreamsQueue
 from agent_runtime_grid.storage.models import metadata
 
@@ -226,3 +229,71 @@ async def test_full_stack_report_cross_links_quality_and_runtime_evidence(
     assert "gdev-billing-refund-001" in rendered_report
     assert "secret-value" not in rendered_report
     assert "api_token" not in rendered_report
+
+
+@pytest.mark.asyncio
+async def test_full_stack_live_local_proof_runs_cases_through_grid(
+    monkeypatch: pytest.MonkeyPatch,
+    session_factory: async_sessionmaker[AsyncSession],
+    queue: RedisStreamsQueue,
+    tmp_path: Path,
+) -> None:
+    dataset_path = _write_eval_lab_dataset(tmp_path, count=2)
+    eval_report_path = _write_eval_lab_report(tmp_path)
+    gdev_artifact_path = _write_gdev_artifact(tmp_path)
+    report_path = tmp_path / "reports" / "full-stack" / "live_local_runtime_report.md"
+    monkeypatch.setenv("GDEV_TEST_WEBHOOK_SECRET", "test-token")
+    observed_urls: list[str] = []
+
+    def transport(
+        url: str,
+        _body: bytes,
+        _headers: dict[str, str],
+    ) -> LocalGdevHttpResponse:
+        observed_urls.append(url)
+        return LocalGdevHttpResponse(
+            status_code=200,
+            output={
+                "status": "pending",
+                "classification": {"category": "billing", "confidence": 0.92},
+                "requires_human": True,
+                "guard_blocked": False,
+                "unsafe_auto_approval": False,
+                "cost_usd": 0.0,
+            },
+        )
+
+    monkeypatch.setattr(gdev_agent, "_post_signed_json_sync", transport)
+
+    result = await run_full_stack_proof(
+        session_factory=session_factory,
+        queue=queue,
+        eval_lab_dataset_path=dataset_path,
+        eval_lab_report_path=eval_report_path,
+        gdev_artifact_path=gdev_artifact_path,
+        jobs=2,
+        workers=2,
+        artifact_root=tmp_path / "artifacts",
+        report_path=report_path,
+        candidate_id="gdev-agent-local",
+        live_local_gdev=LiveLocalGdevConfig(
+            base_url="http://localhost:8000",
+            tenant_slug="test-tenant-a",
+            tenant_id="aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+            webhook_secret_env="GDEV_TEST_WEBHOOK_SECRET",
+        ),
+    )
+    rendered_report = report_path.read_text(encoding="utf-8")
+    rendered_artifacts = "\n".join(
+        path.read_text(encoding="utf-8") for path in (tmp_path / "artifacts").glob("*/*.json")
+    )
+
+    assert result.report.submitted_jobs == 2
+    assert result.report.lifecycle_counts["completed"] == 2
+    assert observed_urls == ["http://localhost:8000/webhook", "http://localhost:8000/webhook"]
+    assert "proof_mode: full-stack-live-local" in rendered_report
+    assert "configured localhost gdev-agent HTTP calls" in rendered_report
+    assert "api_token" not in rendered_report
+    assert "secret-value" not in rendered_report
+    assert "test-token" not in rendered_artifacts
+    assert "api_token" not in rendered_artifacts

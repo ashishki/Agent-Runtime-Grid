@@ -16,9 +16,11 @@ empty directories. Stable reviewer snapshots live under `docs/evidence/`.
 - `reports/ai_cost_rollup.md` - planned cost rollup output path used by the cost CLI.
 - `reports/failure-injection/*.md` - failure scenario report pack produced by T25.
 - `reports/full-stack/runtime_report.md` - cross-project artifact proof output produced by T29.
+- `reports/full-stack/live_local_runtime_report.md` - optional full-stack live-local proof output produced by T31.
 - `docs/evidence/runtime-smoke-100.md` - committed snapshot for the generated 100-job smoke report.
 - `docs/evidence/runtime-reliability-500.md` - committed snapshot for the generated 500-job reliability report.
 - `docs/evidence/full-stack-artifact-proof.md` - committed snapshot for the current cross-project artifact proof.
+- `docs/evidence/full-stack-live-local.md` - committed snapshot for the optional live-local proof mode.
 - `docs/evidence/failure-injection-pack-summary.md` - committed snapshot for the failure-injection report pack.
 
 ## Planned Reports

@@ -41,6 +41,8 @@ class CrossProjectInputs:
     eval_lab_report_path: Path
     gdev_artifact_path: Path
     candidate_id: str
+    proof_mode: str = "full-stack-artifact-proof"
+    gdev_base_url: str | None = None
 
 
 @dataclass(frozen=True)
@@ -50,6 +52,14 @@ class FullStackProofResult:
     report: ReliabilityReport
     inputs: CrossProjectInputs
     selected_case_ids: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class LiveLocalGdevConfig:
+    base_url: str
+    tenant_slug: str
+    tenant_id: str
+    webhook_secret_env: str
 
 
 async def run_full_stack_proof(
@@ -64,12 +74,17 @@ async def run_full_stack_proof(
     artifact_root: Path,
     report_path: Path,
     candidate_id: str = DEFAULT_CANDIDATE_ID,
+    live_local_gdev: LiveLocalGdevConfig | None = None,
 ) -> FullStackProofResult:
     inputs = validate_cross_project_inputs(
         eval_lab_dataset_path=eval_lab_dataset_path,
         eval_lab_report_path=eval_lab_report_path,
         gdev_artifact_path=gdev_artifact_path,
         candidate_id=candidate_id,
+        proof_mode=(
+            "full-stack-live-local" if live_local_gdev is not None else "full-stack-artifact-proof"
+        ),
+        gdev_base_url=live_local_gdev.base_url if live_local_gdev is not None else None,
     )
     cases = _load_eval_lab_cases(inputs.eval_lab_dataset_path, limit=jobs)
     if not cases:
@@ -84,16 +99,17 @@ async def run_full_stack_proof(
         for case in cases:
             case_id = _case_id(case)
             request = _case_request(case)
+            job_payload = _gdev_job_payload(
+                case_id=case_id,
+                candidate_id=inputs.candidate_id,
+                request=request,
+                eval_result_path=eval_result_dir / f"{case_id}.json",
+                live_local_gdev=live_local_gdev,
+            )
             job = await repository.create_job(
                 JobSubmission(
                     job_type="gdev_webhook_eval",
-                    payload={
-                        "case_id": case_id,
-                        "candidate_id": inputs.candidate_id,
-                        "mode": "stub",
-                        "request": request,
-                        "eval_result_path": str(eval_result_dir / f"{case_id}.json"),
-                    },
+                    payload=job_payload,
                     idempotency_key=f"{run_id}:{case_id}",
                     timeout_seconds=30,
                     max_retries=1,
@@ -153,6 +169,8 @@ def validate_cross_project_inputs(
     eval_lab_report_path: Path,
     gdev_artifact_path: Path,
     candidate_id: str,
+    proof_mode: str = "full-stack-artifact-proof",
+    gdev_base_url: str | None = None,
 ) -> CrossProjectInputs:
     if not eval_lab_dataset_path.is_file():
         raise FullStackProofError(f"Eval Lab dataset not found: {eval_lab_dataset_path}")
@@ -168,6 +186,8 @@ def validate_cross_project_inputs(
         eval_lab_report_path=eval_lab_report_path,
         gdev_artifact_path=gdev_artifact_path,
         candidate_id=normalized_candidate_id,
+        proof_mode=proof_mode,
+        gdev_base_url=gdev_base_url,
     )
 
 
@@ -199,6 +219,7 @@ def render_full_stack_report(result: FullStackProofResult) -> str:
         "",
         f"grid_run_id: {result.run_id}",
         f"candidate_id: {input_paths.candidate_id}",
+        f"proof_mode: {input_paths.proof_mode}",
         f"eval_lab_dataset_path: {input_paths.eval_lab_dataset_path}",
         f"eval_lab_report_path: {input_paths.eval_lab_report_path}",
         f"gdev_artifact_path: {input_paths.gdev_artifact_path}",
@@ -225,10 +246,7 @@ def render_full_stack_report(result: FullStackProofResult) -> str:
             "",
             "## Known Limits",
             "",
-            "- This proof uses local deterministic Grid execution.",
-            "- gdev-agent is represented through ready artifact paths and deterministic "
-            "`gdev_webhook_eval` jobs.",
-            "- No live model calls or non-local worker egress are enabled by default.",
+            *_known_limit_lines(result.inputs),
         ]
     )
     return "\n".join(lines)
@@ -247,6 +265,7 @@ async def run_full_stack_from_urls(
     report_path: Path,
     candidate_id: str = DEFAULT_CANDIDATE_ID,
     clean_state: bool = True,
+    live_local_gdev: LiveLocalGdevConfig | None = None,
 ) -> FullStackProofResult:
     engine = create_async_engine(database_url)
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
@@ -278,6 +297,7 @@ async def run_full_stack_from_urls(
             artifact_root=artifact_root,
             report_path=report_path,
             candidate_id=candidate_id,
+            live_local_gdev=live_local_gdev,
         )
     finally:
         if lock_connection is not None:
@@ -327,6 +347,99 @@ def full_stack_command(
     typer.echo(f"report: {result.report_path}")
 
 
+async def run_full_stack_live_local_from_urls(
+    *,
+    database_url: str = DEFAULT_DATABASE_URL,
+    redis_url: str = DEFAULT_REDIS_URL,
+    eval_lab_dataset_path: Path,
+    eval_lab_report_path: Path,
+    gdev_artifact_path: Path,
+    jobs: int,
+    workers: int,
+    artifact_root: Path,
+    report_path: Path,
+    candidate_id: str,
+    gdev_base_url: str,
+    gdev_tenant_slug: str,
+    gdev_tenant_id: str,
+    gdev_webhook_secret_env: str,
+    clean_state: bool = True,
+) -> FullStackProofResult:
+    return await run_full_stack_from_urls(
+        database_url=database_url,
+        redis_url=redis_url,
+        eval_lab_dataset_path=eval_lab_dataset_path,
+        eval_lab_report_path=eval_lab_report_path,
+        gdev_artifact_path=gdev_artifact_path,
+        jobs=jobs,
+        workers=workers,
+        artifact_root=artifact_root,
+        report_path=report_path,
+        candidate_id=candidate_id,
+        clean_state=clean_state,
+        live_local_gdev=LiveLocalGdevConfig(
+            base_url=gdev_base_url,
+            tenant_slug=gdev_tenant_slug,
+            tenant_id=gdev_tenant_id,
+            webhook_secret_env=gdev_webhook_secret_env,
+        ),
+    )
+
+
+@proof_app.command("full-stack-live-local")
+def full_stack_live_local_command(
+    eval_lab_dataset: Annotated[Path, typer.Option("--eval-lab-dataset")],
+    eval_lab_report: Annotated[Path, typer.Option("--eval-lab-report")],
+    gdev_artifact: Annotated[Path, typer.Option("--gdev-artifact")],
+    gdev_base_url: Annotated[str, typer.Option("--gdev-base-url")] = "http://localhost:8000",
+    gdev_tenant_slug: Annotated[str, typer.Option("--gdev-tenant-slug")] = "test-tenant-a",
+    gdev_tenant_id: Annotated[str, typer.Option("--gdev-tenant-id")] = (
+        "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+    ),
+    gdev_webhook_secret_env: Annotated[str, typer.Option("--gdev-webhook-secret-env")] = (
+        "GDEV_AGENT_WEBHOOK_SECRET"
+    ),
+    jobs: Annotated[int, typer.Option("--jobs", min=1)] = 20,
+    workers: Annotated[int, typer.Option("--workers", min=1)] = 4,
+    candidate_id: Annotated[str, typer.Option("--candidate-id")] = DEFAULT_CANDIDATE_ID,
+    artifact_root: Annotated[Path, typer.Option("--artifact-root")] = Path(
+        "artifacts/full-stack-live-local"
+    ),
+    report_path: Annotated[Path, typer.Option("--report")] = Path(
+        "reports/full-stack/live_local_runtime_report.md"
+    ),
+    database_url: Annotated[str, typer.Option("--database-url")] = DEFAULT_DATABASE_URL,
+    redis_url: Annotated[str, typer.Option("--redis-url")] = DEFAULT_REDIS_URL,
+) -> None:
+    try:
+        result = asyncio.run(
+            run_full_stack_live_local_from_urls(
+                database_url=database_url,
+                redis_url=redis_url,
+                eval_lab_dataset_path=eval_lab_dataset,
+                eval_lab_report_path=eval_lab_report,
+                gdev_artifact_path=gdev_artifact,
+                jobs=jobs,
+                workers=workers,
+                candidate_id=candidate_id,
+                artifact_root=artifact_root,
+                report_path=report_path,
+                gdev_base_url=gdev_base_url,
+                gdev_tenant_slug=gdev_tenant_slug,
+                gdev_tenant_id=gdev_tenant_id,
+                gdev_webhook_secret_env=gdev_webhook_secret_env,
+            )
+        )
+    except FullStackProofError as exc:
+        typer.echo(f"full-stack live-local proof failed: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    typer.echo(f"run_id: {result.run_id}")
+    typer.echo(f"jobs: {result.report.submitted_jobs}")
+    typer.echo(f"completed: {result.report.lifecycle_counts.get('completed', 0)}")
+    typer.echo(f"report: {result.report_path}")
+
+
 def _load_eval_lab_cases(dataset_path: Path, *, limit: int) -> list[dict[str, Any]]:
     if limit <= 0:
         raise FullStackProofError("jobs must be positive")
@@ -365,3 +478,48 @@ def _case_request(case: dict[str, Any]) -> dict[str, Any]:
         "text": case.get("text") or "",
     }
     return {key: value for key, value in request.items() if value is not None}
+
+
+def _gdev_job_payload(
+    *,
+    case_id: str,
+    candidate_id: str,
+    request: dict[str, Any],
+    eval_result_path: Path,
+    live_local_gdev: LiveLocalGdevConfig | None,
+) -> dict[str, Any]:
+    payload = {
+        "case_id": case_id,
+        "candidate_id": candidate_id,
+        "mode": "local" if live_local_gdev is not None else "stub",
+        "request": request,
+        "eval_result_path": str(eval_result_path),
+    }
+    if live_local_gdev is not None:
+        payload.update(
+            {
+                "gdev_base_url": live_local_gdev.base_url,
+                "gdev_tenant_slug": live_local_gdev.tenant_slug,
+                "gdev_tenant_id": live_local_gdev.tenant_id,
+                "gdev_webhook_secret_env": live_local_gdev.webhook_secret_env,
+            }
+        )
+    return payload
+
+
+def _known_limit_lines(inputs: CrossProjectInputs) -> list[str]:
+    if inputs.proof_mode == "full-stack-live-local":
+        return [
+            "- This proof uses local Grid execution and configured localhost "
+            "gdev-agent HTTP calls.",
+            "- Eval cases cannot define network destinations, tenant secrets, or "
+            "commands; the operator supplies the local gdev-agent config.",
+            "- Runtime Grid does not make live model calls. For reproducible local "
+            "evidence, run gdev-agent in deterministic demo mode.",
+        ]
+    return [
+        "- This proof uses local deterministic Grid execution.",
+        "- gdev-agent is represented through ready artifact paths and deterministic "
+        "`gdev_webhook_eval` jobs.",
+        "- No live model calls or non-local worker egress are enabled by default.",
+    ]

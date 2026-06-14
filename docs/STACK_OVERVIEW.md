@@ -43,22 +43,22 @@ This is better described as `full-stack-artifact-proof`. The CLI command remains
 `proof full-stack` for compatibility, but it does not call live gdev-agent over
 HTTP and does not make live model calls by default.
 
-## Future Live-Local Mode
+## Live-Local Mode
 
-A future `full-stack-live-local` mode would use Grid workers to trigger the live
-local quality path:
+The optional `full-stack-live-local` mode uses Grid workers to trigger the live
+local gdev HTTP path:
 
 ```text
 Runtime Grid worker
-  -> Eval Lab runner or gdev HTTP adapter
   -> local gdev-agent /webhook
-  -> Eval Lab validators
   -> Grid runtime artifacts
-  -> cross-linked quality and reliability report
+  -> cross-linked reliability report
 ```
 
-That mode needs explicit egress, budget, timeout, and artifact boundaries before
-it is implemented.
+That mode stays local-first: the operator supplies a localhost base URL and an
+environment-variable name for the webhook secret; dataset cases cannot define
+network destinations or secrets. Runtime Grid still does not make live model
+calls.
 
 ## Agent And Provider Model
 
@@ -81,4 +81,3 @@ remain deterministic.
 This stack is v1 local evidence. It does not claim external adoption, hosted
 operations, exactly-once execution, production sandboxing, production SLOs, or
 an autonomous swarm.
-

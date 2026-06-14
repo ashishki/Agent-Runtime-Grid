@@ -38,10 +38,8 @@ PATH=.venv/bin:$PATH python -m agent_runtime_grid.cli proof full-stack \
 | duplicate finalization count | 0 |
 | secret handling | raw secret-like request fields omitted from report |
 
-## Future Mode
+## Related Live-Local Mode
 
-`full-stack-live-local` is a future mode. It should run Grid workers that trigger
-Eval Lab or gdev-agent HTTP execution against a local `gdev-agent` service, then
-write cross-linked quality and runtime reports. That future mode needs explicit
-egress, timeout, budget, and artifact boundaries.
-
+`proof full-stack-live-local` is implemented as a separate optional mode. It
+runs Grid workers that call a locally running `gdev-agent` `/webhook` endpoint,
+while keeping dataset-controlled egress and secrets forbidden.

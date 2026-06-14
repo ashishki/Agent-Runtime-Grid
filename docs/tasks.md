@@ -1125,3 +1125,63 @@ Context-Refs:
   - docs/INTEGRATIONS.md
   - reports/README.md
   - docs/EVIDENCE_INDEX.md
+
+---
+
+## T31: Full-Stack Live-Local Proof Mode
+
+State: done
+Owner: codex
+Phase: 12
+Type: integration
+Depends-On: T29, T30
+
+Objective: |
+  Add a separate live-local proof mode that keeps `proof full-stack` as
+  artifact proof while allowing Runtime Grid workers to call a locally running
+  `gdev-agent` `/webhook` endpoint with operator-supplied localhost config,
+  env-only webhook secret lookup, sanitized artifacts, and no Runtime Grid live
+  model calls.
+
+Acceptance-Criteria:
+  - id: AC-1
+    description: "The gdev webhook runner supports local HTTP mode with HMAC signing, localhost-only base URL validation, env-only secret lookup, and sanitized evidence."
+    test: "python -m pytest tests/integration/test_gdev_agent_integration.py::test_gdev_local_mode_posts_signed_webhook_without_raw_payload tests/integration/test_gdev_agent_integration.py::test_gdev_local_mode_rejects_non_local_base_url -q"
+  - id: AC-2
+    description: "The full-stack live-local proof processes selected cases through Grid workers and records live-local mode in the generated report."
+    test: "python -m pytest tests/integration/test_full_stack_proof.py::test_full_stack_live_local_proof_runs_cases_through_grid -q"
+  - id: AC-3
+    description: "Docs separate artifact proof from live-local proof and preserve local/no-model-cost limits."
+    verify: "rg -n \"full-stack-live-local|webhook secret|localhost|no-model-cost|Runtime Grid does not make live model calls\" README.md docs/INTEGRATIONS.md docs/KNOWN_LIMITS.md docs/evidence/full-stack-live-local.md"
+
+Files:
+  - src/agent_runtime_grid/jobs/gdev_agent.py
+  - src/agent_runtime_grid/cli/proof.py
+  - tests/integration/test_gdev_agent_integration.py
+  - tests/integration/test_full_stack_proof.py
+  - README.md
+  - docs/INTEGRATIONS.md
+  - docs/STACK_OVERVIEW.md
+  - docs/CASE_STUDY.md
+  - docs/KNOWN_LIMITS.md
+  - docs/EVIDENCE_INDEX.md
+  - docs/evidence/full-stack-artifact-proof.md
+  - docs/evidence/full-stack-live-local.md
+  - reports/README.md
+  - docs/tasks.md
+  - docs/CODEX_PROMPT.md
+  - docs/IMPLEMENTATION_JOURNAL.md
+
+Cost-Budget:
+  scope: local proof
+  max_cost_usd: 0
+  max_model_calls: 0
+  max_tool_calls: n/a
+  max_retries: 2
+  approval_required_when: "non-local egress, live model mode, broader worker secret scope, recurring/scheduled live-local execution, or budget overrun"
+
+Context-Refs:
+  - docs/INTEGRATIONS.md
+  - docs/KNOWN_LIMITS.md
+  - docs/IMPLEMENTATION_CONTRACT.md#worker-network-and-secret-scope
+  - docs/IMPLEMENTATION_CONTRACT.md#stub-mode-is-default

@@ -105,9 +105,10 @@ artifacts and Eval-compatible result JSON, and produces one runtime report that
 cross-links quality evidence with lifecycle, artifact, idempotency, and
 queue/backpressure evidence.
 
-It is artifact-linked proof today, not live HTTP end to end. A future
-`full-stack-live-local` mode would make workers trigger Eval Lab or gdev-agent
-HTTP execution against a local `gdev-agent` service.
+It is artifact-linked proof by default, not live HTTP end to end. The optional
+`proof full-stack-live-local` mode makes workers call a locally running
+`gdev-agent` `/webhook` endpoint with operator-supplied localhost config and a
+webhook secret read from an environment variable.
 
 ## Trade-offs
 

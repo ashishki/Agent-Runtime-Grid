@@ -1,4 +1,6 @@
 import asyncio
+import hashlib
+import hmac
 import json
 import os
 from collections.abc import AsyncIterator
@@ -17,6 +19,12 @@ from agent_runtime_grid.cli.benchmark import render_reliability_report
 from agent_runtime_grid.cli.smoke import build_smoke_report
 from agent_runtime_grid.cost.telemetry import BudgetPolicy, ProviderCallBlockedError
 from agent_runtime_grid.domain.jobs import JobRecord, JobSubmission, payload_sha256
+from agent_runtime_grid.jobs.gdev_agent import (
+    GdevAgentPayloadError,
+    LocalGdevHttpResponse,
+    run_gdev_webhook_eval,
+    validate_gdev_webhook_eval_payload,
+)
 from agent_runtime_grid.queue.redis_streams import RedisStreamsQueue
 from agent_runtime_grid.queue.types import QueueJobMessage
 from agent_runtime_grid.storage.models import metadata
@@ -27,6 +35,7 @@ DEFAULT_DATABASE_URL = (
     "postgresql+asyncpg://agent_runtime_grid:local-dev-password@localhost:5432/agent_runtime_grid"
 )
 DEFAULT_REDIS_URL = "redis://localhost:6379/0"
+LOCAL_GDEV_BASE_URL = "http://localhost:8000"
 
 
 @pytest_asyncio.fixture
@@ -86,6 +95,26 @@ def _payload(index: int) -> dict[str, object]:
             "api_token": "test-token",
         },
         "eval_result_path": f"eval-results/gdev-agent-local/{case_id}.json",
+    }
+
+
+def _local_payload(tmp_path: Path) -> dict[str, object]:
+    return {
+        "case_id": "gdev-local-case-001",
+        "candidate_id": "gdev-agent-local",
+        "mode": "local",
+        "request": {
+            "message_id": "message-local-001",
+            "tenant_slug": "test-tenant-a",
+            "user_id": "eval-user-001",
+            "text": "I was charged twice and need a refund review.",
+            "api_token": "test-token",
+        },
+        "eval_result_path": str(tmp_path / "eval-results" / "gdev-local-case-001.json"),
+        "gdev_base_url": LOCAL_GDEV_BASE_URL,
+        "gdev_tenant_slug": "test-tenant-a",
+        "gdev_tenant_id": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+        "gdev_webhook_secret_env": "GDEV_TEST_WEBHOOK_SECRET",
     }
 
 
@@ -253,3 +282,78 @@ async def test_gdev_runtime_and_eval_outputs_cross_link(
     assert "eval_result_path=eval-results/gdev-agent-local/gdev-case-002.json" in rendered_report
     assert eval_result["case_id"] == "gdev-case-002"
     assert eval_result["runtime_artifact_path"] == str(artifact_path)
+
+
+@pytest.mark.asyncio
+async def test_gdev_local_mode_posts_signed_webhook_without_raw_payload(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("GDEV_TEST_WEBHOOK_SECRET", "test-token")
+    observed: dict[str, object] = {}
+
+    def transport(
+        url: str,
+        body: bytes,
+        headers: dict[str, str],
+    ) -> LocalGdevHttpResponse:
+        observed["url"] = url
+        observed["body"] = body
+        observed["headers"] = headers
+        return LocalGdevHttpResponse(
+            status_code=200,
+            output={
+                "status": "pending",
+                "classification": {"category": "billing", "confidence": 0.92},
+                "requires_human": True,
+                "guard_blocked": False,
+                "unsafe_auto_approval": False,
+                "cost_usd": 0.0,
+            },
+        )
+
+    result = await run_gdev_webhook_eval(
+        _local_payload(tmp_path),
+        attempt_number=1,
+        transport=transport,
+    )
+
+    body = observed["body"]
+    assert isinstance(body, bytes)
+    headers = observed["headers"]
+    assert isinstance(headers, dict)
+    expected_signature = (
+        "sha256="
+        + hmac.new(
+            b"test-token",
+            body,
+            hashlib.sha256,
+        ).hexdigest()
+    )
+    webhook_payload = json.loads(body.decode("utf-8"))
+    eval_result_path = tmp_path / "eval-results" / "gdev-local-case-001.json"
+    eval_result = json.loads(eval_result_path.read_text(encoding="utf-8"))
+    rendered_evidence = json.dumps(result, sort_keys=True) + json.dumps(
+        eval_result,
+        sort_keys=True,
+    )
+
+    assert observed["url"] == f"{LOCAL_GDEV_BASE_URL}/webhook"
+    assert headers["X-Tenant-Slug"] == "test-tenant-a"
+    assert headers["X-Webhook-Signature"] == expected_signature
+    assert webhook_payload["tenant_id"] == "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+    assert webhook_payload["metadata"]["eval_case_id"] == "gdev-local-case-001"
+    assert result["quality_status"] == "pass"
+    assert eval_result["sanitized_response"]["category"] == "billing"
+    assert eval_result["normalized_fields"]["requires_human"] is True
+    assert "test-token" not in rendered_evidence
+    assert "api_token" not in rendered_evidence
+    assert "I was charged twice" not in rendered_evidence
+
+
+def test_gdev_local_mode_rejects_non_local_base_url(tmp_path: Path) -> None:
+    payload = _local_payload(tmp_path)
+    payload["gdev_base_url"] = "https://example.com"
+
+    with pytest.raises(GdevAgentPayloadError, match="localhost|loopback|http"):
+        validate_gdev_webhook_eval_payload(payload)

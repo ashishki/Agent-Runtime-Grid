@@ -429,3 +429,34 @@ This file is not the source of truth for architecture or policy. Use it as a ret
 - Evidence collected: `docs/audit/PHASE11_IMPLEMENTATION_REVIEW.md`; T29 acceptance tests; manual adjacent-artifact proof command; full baseline; ruff gates; diff check; task ledger scan; prohibited framing scan; runtime egress review.
 - Follow-ups: commit granular changes and push.
 - Notes for next agent: generated full-stack reports remain ignored by git; committed docs describe command usage and evidence paths only.
+
+### 2026-06-14 - T31 - Full-Stack Live-Local Proof Mode
+
+- Scope: `src/agent_runtime_grid/jobs/gdev_agent.py`,
+  `src/agent_runtime_grid/cli/proof.py`,
+  `tests/integration/test_gdev_agent_integration.py`,
+  `tests/integration/test_full_stack_proof.py`, `README.md`,
+  `docs/INTEGRATIONS.md`, `docs/STACK_OVERVIEW.md`,
+  `docs/CASE_STUDY.md`, `docs/KNOWN_LIMITS.md`,
+  `docs/EVIDENCE_INDEX.md`, `docs/evidence/full-stack-artifact-proof.md`,
+  `docs/evidence/full-stack-live-local.md`, `reports/README.md`,
+  `docs/tasks.md`, and `docs/CODEX_PROMPT.md`.
+- Why this work happened: The stack needed a real local HTTP mode distinct from
+  artifact proof, so Runtime Grid can execute selected Eval Lab/gdev cases as
+  worker jobs that call a locally running `gdev-agent` `/webhook`.
+- Decisions applied: `proof full-stack` remains artifact proof; live-local is a
+  separate command. Dataset cases cannot define network destinations or secrets;
+  workers accept only operator-configured localhost/loopback gdev URLs and read
+  the webhook secret value from an environment variable. Runtime Grid still
+  makes no live model calls.
+- Evidence collected: focused tests cover local HMAC signing, localhost-only URL
+  validation, env-only webhook secret lookup, sanitized artifacts/reports, and
+  live-local full-stack Grid execution with mocked local transport. Full local
+  gate passed with `PATH=.venv/bin:$PATH python -m pytest -q` -> 83 passed and
+  one upstream FastAPI/Starlette warning; `ruff check` and
+  `ruff format --check` passed.
+- Follow-ups: Promote a committed live-local report only after an operator-run
+  local gdev-agent demo-mode run is executed and reviewed.
+- Notes for next agent: generated `reports/full-stack/live_local_runtime_report.md`
+  remains ignored by git; `docs/evidence/full-stack-live-local.md` is the stable
+  reviewer snapshot.

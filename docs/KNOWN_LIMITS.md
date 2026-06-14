@@ -33,6 +33,10 @@ v1 targets at-least-once delivery with idempotent finalization.
 - The current cross-project proof is `full-stack-artifact-proof`: it validates
   ready Eval Lab/gdev artifacts and runs deterministic Grid jobs. It does not
   call live gdev-agent over HTTP by default.
+- `full-stack-live-local` is implemented for an operator-run local
+  `gdev-agent` service, but it is still local T1 evidence. It is not remote
+  deployment proof, and it expects `gdev-agent` to run in deterministic demo
+  mode for reproducible no-model-cost evidence.
 - Failure-injection reports are generated from validated scenario evidence; remote chaos testing is not claimed.
 
 ## Local Runtime Boundary
@@ -57,7 +61,7 @@ Before remote or trusted operation, the project would need:
 - production migration workflow
 - operational runbooks
 - remote CI evidence for the full reliability proof
-- a separate `full-stack-live-local` mode with explicit egress, timeout, budget,
-  and artifact boundaries
+- remote or scheduled live-local execution with explicit egress, timeout,
+  budget, and artifact-retention policy
 
 These are tracked as future work, not current claims.

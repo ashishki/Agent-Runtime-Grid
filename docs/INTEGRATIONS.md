@@ -76,14 +76,38 @@ This is the current `full-stack-artifact-proof` mode. The CLI command remains
 `proof full-stack` for compatibility, but the proof is a deterministic
 cross-project artifact replay through Runtime Grid workers.
 
-## Future Full-Stack Live-Local Mode
+## Full-Stack Live-Local Mode
 
-A future `full-stack-live-local` mode would make Runtime Grid workers trigger
-Eval Lab or gdev-agent HTTP execution against a locally running `gdev-agent`,
-then store both quality and runtime artifacts. That mode is not implemented yet
-and needs explicit egress, budget, timeout, and artifact boundaries.
+Command:
+
+```bash
+python -m agent_runtime_grid.cli proof full-stack-live-local \
+  --eval-lab-dataset ../Eval-Ground-Truth-Lab/datasets/gdev_agent/triage_v1.jsonl \
+  --eval-lab-report ../Eval-Ground-Truth-Lab/reports/gdev-agent/baseline_report.md \
+  --gdev-artifact ../gdev-agent/eval/results/last_run.json \
+  --gdev-base-url http://localhost:8000 \
+  --gdev-webhook-secret-env GDEV_AGENT_WEBHOOK_SECRET \
+  --jobs 20 \
+  --workers 4 \
+  --report reports/full-stack/live_local_runtime_report.md
+```
+
+Runtime behavior:
+
+- The command uses the same Grid queue, worker lifecycle, Postgres state,
+  artifact store, and reliability report path as artifact proof.
+- Selected Eval Lab cases become `gdev_webhook_eval` jobs with `mode=local`.
+- The worker calls only the operator-configured local `gdev-agent` base URL plus
+  `/webhook`; dataset cases cannot define network destinations or commands.
+- Webhook signing uses the configured environment-variable name. The secret
+  value is not stored in job payloads, artifacts, or reports.
+- Runtime Grid does not make live model calls. For reproducible evidence,
+  `gdev-agent` should run in deterministic demo mode.
+- Artifacts store request hashes, sanitized responses, normalized fields,
+  timing, and Eval-compatible result paths.
 
 Evidence:
 
 - `tests/integration/test_full_stack_proof.py`
+- `tests/integration/test_gdev_agent_integration.py`
 - `src/agent_runtime_grid/cli/proof.py`

@@ -1090,7 +1090,7 @@ Objective: |
 
 Acceptance-Criteria:
   - id: AC-1
-    description: "Stack overview maps gdev-agent, Eval Lab, and Runtime Grid roles and separates artifact proof from future live-local mode."
+    description: "Stack overview maps gdev-agent, Eval Lab, and Runtime Grid roles and separates artifact proof from live-local mode."
     verify: "rg -n \"full-stack-artifact-proof|full-stack-live-local|Runtime Grid\" docs/STACK_OVERVIEW.md docs/INTEGRATIONS.md README.md"
   - id: AC-2
     description: "Committed evidence snapshots exist for smoke, reliability, full-stack artifact proof, and failure-injection report pack."

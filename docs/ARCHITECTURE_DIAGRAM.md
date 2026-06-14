@@ -86,7 +86,7 @@ Full-stack artifact proof
   -> ready gdev-agent artifact path
   -> selected gdev_webhook_eval jobs
   -> runtime artifacts and report cross-links
-  -> future live-local mode remains separate
+  -> optional live-local proof remains separate
 ```
 
 ## Authority Boundaries

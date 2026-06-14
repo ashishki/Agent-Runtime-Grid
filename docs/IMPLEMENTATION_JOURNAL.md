@@ -409,14 +409,15 @@ This file is not the source of truth for architecture or policy. Use it as a ret
   and tests, but generated reports are intentionally ignored by git. A reviewer
   also could misread `proof full-stack` as live HTTP end-to-end execution.
 - Decisions applied: Current cross-project mode is now framed as
-  full-stack artifact proof. `full-stack-live-local` is reserved for future work
-  with explicit egress, timeout, budget, and artifact boundaries.
+  full-stack artifact proof. At T30, `full-stack-live-local` was reserved for a
+  separate follow-up with explicit egress, timeout, budget, and artifact
+  boundaries; T31 implemented that separate optional mode.
 - Evidence collected: Committed snapshots were added for the 100-job smoke
   proof, 500-job reliability proof, full-stack artifact proof, and
   failure-injection pack. No runtime behavior, provider calls, egress, or budget
   policy changed.
 - Follow-ups: Implement live-local full-stack mode only as a separate task with
-  explicit approval boundaries.
+  explicit approval boundaries. Completed in T31.
 - Notes for next agent: `docs/evidence/` is the stable reviewer surface;
   `reports/` remains the current-run generated output surface and is still
   ignored by git.

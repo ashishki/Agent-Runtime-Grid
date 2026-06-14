@@ -41,9 +41,12 @@ The current implementation proves the core runtime mechanics:
 - batch CLI helpers and benchmark report rendering
 - Eval-Ground-Truth-Lab case execution through normal queue/workers
 - deterministic gdev-agent webhook evaluation jobs
-- full-stack proof command that ingests ready Eval Lab and gdev-agent artifacts,
-  runs selected cases through Grid workers, and writes cross-linked runtime evidence
+- full-stack artifact proof command that ingests ready Eval Lab and gdev-agent
+  artifacts, runs selected cases through Grid workers, and writes cross-linked
+  runtime evidence
 - failure-injection report pack generation
+- committed reviewer snapshots under `docs/evidence/` for smoke, reliability,
+  failure-injection, and cross-project artifact proof surfaces
 - operator queue inspection, stale recovery, and pending lease renewal primitives
 - automated worker heartbeat renewal for active long-running jobs
 
@@ -103,7 +106,7 @@ PATH=.venv/bin:$PATH python -m agent_runtime_grid.cli benchmark v1-proof \
 
 The smoke and 500-job reliability proof commands now run end to end through local Redis Streams, workers, Postgres state, artifacts, and report validation.
 
-Run the cross-project proof once Eval Lab and gdev-agent artifacts exist:
+Run the cross-project artifact proof once Eval Lab and gdev-agent artifacts exist:
 
 ```bash
 PATH=.venv/bin:$PATH python -m agent_runtime_grid.cli proof full-stack \
@@ -115,7 +118,13 @@ PATH=.venv/bin:$PATH python -m agent_runtime_grid.cli proof full-stack \
   --report reports/full-stack/runtime_report.md
 ```
 
-This submits selected Eval Lab/gdev cases as normal Grid jobs, dispatches them through Redis Streams, completes them with workers, writes artifacts and Eval-compatible result JSON, then renders one report linking quality evidence and runtime reliability evidence.
+This submits selected Eval Lab/gdev cases as normal Grid jobs, dispatches them
+through Redis Streams, completes them with workers, writes artifacts and
+Eval-compatible result JSON, then renders one report linking quality evidence
+and runtime reliability evidence. This is `full-stack-artifact-proof`: it uses
+ready artifacts and deterministic jobs by default. It does not call live
+gdev-agent over HTTP. A future `full-stack-live-local` mode would make workers
+trigger Eval Lab or gdev-agent HTTP execution end to end.
 
 ## Architecture
 
@@ -135,6 +144,7 @@ Core references:
 
 - `docs/ARCHITECTURE.md` - canonical architecture and runtime boundaries
 - `docs/ARCHITECTURE_DIAGRAM.md` - compact runtime and evidence-flow diagram
+- `docs/STACK_OVERVIEW.md` - three-project stack map and live/artifact proof split
 - `docs/CASE_STUDY.md` - concise reliability and integration case study
 - `docs/IMPLEMENTATION_CONTRACT.md` - immutable implementation rules
 - `docs/tasks.md` - task plan and acceptance criteria
@@ -145,6 +155,7 @@ Core references:
 - `docs/INTEGRATIONS.md` - Eval Lab and gdev-agent integration boundaries
 - `docs/OPERATIONS.md` - local operator commands for queue inspection and stale recovery
 - `reports/README.md` - report locations and expectations
+- `docs/evidence/` - committed reviewer snapshots for generated report surfaces
 
 ## Operational Guarantees
 
@@ -177,11 +188,21 @@ Planned proof gaps are tracked in `docs/tasks.md`:
 
 ## Reports
 
-Reports are written under `reports/`. Generated report contents are ignored by git; stable placeholders and report documentation are committed.
+Reports are written under `reports/`. Generated report contents are ignored by
+git so local benchmark output does not churn history. Stable placeholders,
+report documentation, and curated committed snapshots under `docs/evidence/`
+are committed for reviewer inspection.
 
 Evidence index: `docs/EVIDENCE_INDEX.md`.
 
 Report guide: `reports/README.md`.
+
+Committed snapshots:
+
+- `docs/evidence/runtime-smoke-100.md`
+- `docs/evidence/runtime-reliability-500.md`
+- `docs/evidence/full-stack-artifact-proof.md`
+- `docs/evidence/failure-injection-pack-summary.md`
 
 ## Known Limits
 

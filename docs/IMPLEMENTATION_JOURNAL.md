@@ -399,6 +399,28 @@ This file is not the source of truth for architecture or policy. Use it as a ret
 - Follow-ups: remote-server runbook or live/local adapter expansion only as a separate task with explicit egress and budget approval.
 - Notes for next agent: local baseline is 80 passing tests with one non-blocking FastAPI/Starlette deprecation warning; use explicit isolated service URLs when adjacent projects own the default ports.
 
+### 2026-06-14 - T30 - Stack Overview And Committed Evidence Snapshots
+
+- Scope: `README.md`, `docs/STACK_OVERVIEW.md`, `docs/INTEGRATIONS.md`,
+  `docs/CASE_STUDY.md`, `docs/KNOWN_LIMITS.md`, `docs/EVIDENCE_INDEX.md`,
+  `docs/ARCHITECTURE_DIAGRAM.md`, `docs/CODEX_PROMPT.md`,
+  `docs/tasks.md`, `docs/evidence/`, and `reports/README.md`.
+- Why this work happened: The runtime proof was inspectable through commands
+  and tests, but generated reports are intentionally ignored by git. A reviewer
+  also could misread `proof full-stack` as live HTTP end-to-end execution.
+- Decisions applied: Current cross-project mode is now framed as
+  full-stack artifact proof. `full-stack-live-local` is reserved for future work
+  with explicit egress, timeout, budget, and artifact boundaries.
+- Evidence collected: Committed snapshots were added for the 100-job smoke
+  proof, 500-job reliability proof, full-stack artifact proof, and
+  failure-injection pack. No runtime behavior, provider calls, egress, or budget
+  policy changed.
+- Follow-ups: Implement live-local full-stack mode only as a separate task with
+  explicit approval boundaries.
+- Notes for next agent: `docs/evidence/` is the stable reviewer surface;
+  `reports/` remains the current-run generated output surface and is still
+  ignored by git.
+
 ### 2026-06-14 - Phase 11 Boundary - Implementation Review
 
 - Scope: T29 implementation, cross-project artifact validation, full-stack proof report, isolated-port baseline, quality gates, local runtime boundary, and runtime egress review.

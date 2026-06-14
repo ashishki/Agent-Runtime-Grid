@@ -86,7 +86,8 @@ Eval-Ground-Truth-Lab integration uses `eval_lab_case` jobs. Runtime Grid loads 
 
 gdev-agent integration uses `gdev_webhook_eval` jobs. Runtime Grid runs deterministic local webhook evaluation cases through the same queue and worker path, stores request hashes and sanitized responses, writes normalized fields, and cross-links Eval Lab-compatible result output.
 
-The full-stack proof command connects the ready artifacts from both adjacent projects:
+The current full-stack artifact proof command connects ready artifacts from both
+adjacent projects:
 
 ```bash
 python -m agent_runtime_grid.cli proof full-stack \
@@ -98,7 +99,15 @@ python -m agent_runtime_grid.cli proof full-stack \
   --report reports/full-stack/runtime_report.md
 ```
 
-That command validates the Eval Lab and gdev-agent evidence paths, submits selected cases as Grid jobs, runs them through Redis Streams and workers, writes artifacts and Eval-compatible result JSON, and produces one runtime report that cross-links quality evidence with lifecycle, artifact, idempotency, and queue/backpressure evidence.
+That command validates the Eval Lab and gdev-agent evidence paths, submits
+selected cases as Grid jobs, runs them through Redis Streams and workers, writes
+artifacts and Eval-compatible result JSON, and produces one runtime report that
+cross-links quality evidence with lifecycle, artifact, idempotency, and
+queue/backpressure evidence.
+
+It is artifact-linked proof today, not live HTTP end to end. A future
+`full-stack-live-local` mode would make workers trigger Eval Lab or gdev-agent
+HTTP execution against a local `gdev-agent` service.
 
 ## Trade-offs
 

@@ -49,7 +49,7 @@ Evidence:
 
 - `tests/integration/test_gdev_agent_integration.py`
 
-## Full-Stack Proof
+## Full-Stack Artifact Proof
 
 Command:
 
@@ -71,6 +71,17 @@ Runtime behavior:
 - The generated report links the Eval Lab quality report, the gdev-agent artifact path, the Grid run ID, lifecycle counts, artifact integrity rows, queue/backpressure metrics, and known limits.
 - The default proof does not call gdev-agent over HTTP and does not make live model calls.
 - Runtime artifacts store request hashes and sanitized responses, not raw secret-like request fields.
+
+This is the current `full-stack-artifact-proof` mode. The CLI command remains
+`proof full-stack` for compatibility, but the proof is a deterministic
+cross-project artifact replay through Runtime Grid workers.
+
+## Future Full-Stack Live-Local Mode
+
+A future `full-stack-live-local` mode would make Runtime Grid workers trigger
+Eval Lab or gdev-agent HTTP execution against a locally running `gdev-agent`,
+then store both quality and runtime artifacts. That mode is not implemented yet
+and needs explicit egress, budget, timeout, and artifact boundaries.
 
 Evidence:
 

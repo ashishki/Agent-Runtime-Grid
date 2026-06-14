@@ -1,7 +1,7 @@
 # Tasks - Agent Runtime Grid
 
 Version: 1.0
-Last updated: 2026-06-12
+Last updated: 2026-06-14
 Mode: Standard
 
 Task state values: `planned`, `in_progress`, `blocked`, `done`.
@@ -1071,3 +1071,57 @@ Context-Refs:
   - docs/IMPLEMENTATION_CONTRACT.md#stub-mode-is-default
   - docs/IMPLEMENTATION_CONTRACT.md#worker-network-and-secret-scope
   - docs/INTEGRATIONS.md
+
+---
+
+## T30: Stack Overview And Committed Evidence Snapshots
+
+State: done
+Owner: codex
+Phase: 11
+Type: evidence
+Depends-On: T29
+
+Objective: |
+  Clarify how Agent Runtime Grid fits with gdev-agent and Eval Ground Truth Lab,
+  name the current cross-project mode as artifact proof instead of live HTTP
+  proof, and add committed reviewer snapshots for generated report surfaces that
+  remain ignored under `reports/`.
+
+Acceptance-Criteria:
+  - id: AC-1
+    description: "Stack overview maps gdev-agent, Eval Lab, and Runtime Grid roles and separates artifact proof from future live-local mode."
+    verify: "rg -n \"full-stack-artifact-proof|full-stack-live-local|Runtime Grid\" docs/STACK_OVERVIEW.md docs/INTEGRATIONS.md README.md"
+  - id: AC-2
+    description: "Committed evidence snapshots exist for smoke, reliability, full-stack artifact proof, and failure-injection report pack."
+    verify: "rg -n \"Committed Evidence Snapshot|Rerun Command\" docs/evidence/*.md"
+  - id: AC-3
+    description: "README and report guide explain that generated reports stay ignored while docs/evidence contains stable reviewer snapshots."
+    verify: "rg -n \"docs/evidence|Generated report contents are ignored|committed snapshots\" README.md reports/README.md docs/EVIDENCE_INDEX.md"
+
+Files:
+  - README.md
+  - docs/STACK_OVERVIEW.md
+  - docs/INTEGRATIONS.md
+  - docs/CASE_STUDY.md
+  - docs/KNOWN_LIMITS.md
+  - docs/EVIDENCE_INDEX.md
+  - docs/ARCHITECTURE_DIAGRAM.md
+  - docs/CODEX_PROMPT.md
+  - docs/IMPLEMENTATION_JOURNAL.md
+  - docs/tasks.md
+  - docs/evidence/
+  - reports/README.md
+
+Cost-Budget:
+  scope: documentation
+  max_cost_usd: 0
+  max_model_calls: 0
+  max_tool_calls: n/a
+  max_retries: n/a
+  approval_required_when: "live gdev-agent HTTP adapter, external egress, live model mode, or broader worker secret scope"
+
+Context-Refs:
+  - docs/INTEGRATIONS.md
+  - reports/README.md
+  - docs/EVIDENCE_INDEX.md

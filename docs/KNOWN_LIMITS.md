@@ -1,6 +1,6 @@
 # Known Limits - Agent Runtime Grid
 
-Last updated: 2026-06-12
+Last updated: 2026-06-14
 
 Agent Runtime Grid is a local-first T1 runtime. The project is intentionally scoped to prove queue-backed execution, durable lifecycle state, deterministic worker behavior, artifacts, logs, metrics, cost telemetry, and reliability reports for batches of AI or agent jobs.
 
@@ -30,6 +30,9 @@ v1 targets at-least-once delivery with idempotent finalization.
 - Artifact integrity is validated in reports, but durable object storage beyond local filesystem is not implemented.
 - Cost telemetry and budget gates are implemented for local runtime policy, but recurring live provider usage still requires explicit approval.
 - Eval-Ground-Truth-Lab and gdev-agent integrations are deterministic local paths; live network adapters are not enabled by default.
+- The current cross-project proof is `full-stack-artifact-proof`: it validates
+  ready Eval Lab/gdev artifacts and runs deterministic Grid jobs. It does not
+  call live gdev-agent over HTTP by default.
 - Failure-injection reports are generated from validated scenario evidence; remote chaos testing is not claimed.
 
 ## Local Runtime Boundary
@@ -54,5 +57,7 @@ Before remote or trusted operation, the project would need:
 - production migration workflow
 - operational runbooks
 - remote CI evidence for the full reliability proof
+- a separate `full-stack-live-local` mode with explicit egress, timeout, budget,
+  and artifact boundaries
 
 These are tracked as future work, not current claims.

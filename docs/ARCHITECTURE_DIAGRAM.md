@@ -57,6 +57,7 @@
                            | reports             |
                            | smoke, 500-job,     |
                            | failure injection,  |
+                           | artifact proof,     |
                            | cost rollup         |
                            +---------------------+
 ```
@@ -79,6 +80,13 @@ gdev-agent webhook cases
   -> sanitized response artifacts
   -> Eval Lab-compatible result path
   -> reliability reports
+
+Full-stack artifact proof
+  -> ready Eval Lab dataset/report paths
+  -> ready gdev-agent artifact path
+  -> selected gdev_webhook_eval jobs
+  -> runtime artifacts and report cross-links
+  -> future live-local mode remains separate
 ```
 
 ## Authority Boundaries

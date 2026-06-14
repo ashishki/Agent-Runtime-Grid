@@ -62,17 +62,18 @@ Implementation agents do not self-review meaningful changes. Review findings are
 Narrow task digest:
 
 - T01-T28 are complete; Phase 8, Phase 9, and Phase 10 reviews passed.
-- T29 is complete.
+- T29 and T30 are complete.
 - T27 is complete.
 - Redis pending-entry lease renewal and local operator inspect/recover CLI commands are implemented.
 - T28 is complete.
 - Worker-owned heartbeat renewal runs while active jobs execute.
 - Phase 10 review passed.
-- `proof full-stack` ingests Eval Lab + gdev-agent artifact paths and writes Grid reliability reporting.
+- `proof full-stack` ingests Eval Lab + gdev-agent artifact paths and writes Grid reliability reporting; current docs name this as full-stack artifact proof, not live HTTP end-to-end proof.
+- Committed reviewer snapshots live under `docs/evidence/`; generated reports under `reports/` remain ignored.
 - Keep Postgres as lifecycle authority and Redis as delivery state.
 - Do not add live model calls.
 - Current local checks use `DATABASE_URL=...55432` and `REDIS_URL=...56379` because gdev-agent owns default local ports.
-- Candidate next work: remote-server runbook/packaging, durable artifact backend, or live/local adapter expansion only with explicit egress and budget approval.
+- Candidate next work: challenge/live-local integration mode, remote-server runbook/packaging, durable artifact backend, or live/local adapter expansion only with explicit egress and budget approval.
 
 ---
 

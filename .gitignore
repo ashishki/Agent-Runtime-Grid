@@ -30,10 +30,13 @@ dist/
 !reports/.gitkeep
 !reports/README.md
 !reports/failure-injection/
+/reports/failure-injection/*
 !reports/failure-injection/.gitkeep
 !reports/full-stack/
+/reports/full-stack/*
 !reports/full-stack/.gitkeep
 !reports/v1/
+/reports/v1/*
 !reports/v1/.gitkeep
 
 # Editor and OS noise

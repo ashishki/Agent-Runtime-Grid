@@ -1,7 +1,7 @@
 # CODEX_PROMPT.md
 
 Version: 1.0
-Date: 2026-06-14
+Date: 2026-06-15
 Phase: 11
 
 This file is the project handoff state for Codex sessions. Repository files, tests, audit reports, and CI results are authoritative.
@@ -16,7 +16,7 @@ This file is the project handoff state for Codex sessions. Repository files, tes
 - **Baseline:** 83 passing tests after T31 on local Grid Compose services (`python -m pytest -q`)
 - **Ruff:** configured in T01; `ruff check` and `ruff format --check` pass locally
 - **Last CI run:** not yet run
-- **Last updated:** 2026-06-14
+- **Last updated:** 2026-06-15
 - **Session tokens (approx):** not tracked
 - **Cumulative phase tokens (approx):** not tracked
 - **Session cost (approx):** not tracked
@@ -62,7 +62,7 @@ Implementation agents do not self-review meaningful changes. Review findings are
 Narrow task digest:
 
 - T01-T28 are complete; Phase 8, Phase 9, and Phase 10 reviews passed.
-- T29, T30, and T31 are complete.
+- T29, T30, T31, and T32 are complete.
 - T27 is complete.
 - Redis pending-entry lease renewal and local operator inspect/recover CLI commands are implemented.
 - T28 is complete.
@@ -70,6 +70,9 @@ Narrow task digest:
 - Phase 10 review passed.
 - `proof full-stack` ingests Eval Lab + gdev-agent artifact paths and writes Grid reliability reporting; current docs name this as full-stack artifact proof.
 - `proof full-stack-live-local` is implemented as a separate optional local mode where Grid workers call a configured localhost gdev-agent `/webhook`; webhook secret values stay env-only and Runtime Grid makes no live model calls.
+- T32 recorded an operator-run live-local snapshot: temporary local gdev-agent
+  demo stack passed demo flow, Runtime Grid completed 20/20 queued HTTP jobs,
+  run ID `c4276927-3159-46fe-9a1c-f166bc40f4a4`.
 - Committed reviewer snapshots live under `docs/evidence/`; generated reports under `reports/` remain ignored.
 - Keep Postgres as lifecycle authority and Redis as delivery state.
 - Do not add live model calls.

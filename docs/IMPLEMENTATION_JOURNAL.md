@@ -461,3 +461,28 @@ This file is not the source of truth for architecture or policy. Use it as a ret
 - Notes for next agent: generated `reports/full-stack/live_local_runtime_report.md`
   remains ignored by git; `docs/evidence/full-stack-live-local.md` is the stable
   reviewer snapshot.
+
+### 2026-06-15 - T32 - Operator-Run Live-Local Proof Snapshot
+
+- Scope: `.gitignore`, `docs/evidence/full-stack-live-local.md`,
+  `docs/EVIDENCE_INDEX.md`, `docs/tasks.md`, `docs/CODEX_PROMPT.md`, and
+  `docs/IMPLEMENTATION_JOURNAL.md`.
+- Why this work happened: T31 implemented live-local mode with mocked local
+  transport tests, but the committed evidence snapshot still lacked an
+  operator-run proof against a real local `gdev-agent` HTTP stack.
+- Decisions applied: Keep generated report contents under `reports/` ignored by
+  git and commit only the stable reviewer snapshot. Preserve env-only webhook
+  secret handling and local/loopback-only egress.
+- Evidence collected: temporary `gdev-agent` demo stack started with API on
+  `http://localhost:8000`; `scripts/demo.sh` passed health, auth, signed
+  webhook, pending approval, approval execution, and metrics; Runtime Grid
+  `proof full-stack-live-local` completed 20/20 jobs with run ID
+  `c4276927-3159-46fe-9a1c-f166bc40f4a4`, zero failed jobs, zero DLQ, zero
+  retries, zero timeouts, zero duplicate finalizations, and 20/20 valid
+  artifacts.
+- Follow-ups: keep generated `reports/full-stack/live_local_runtime_report.md`
+  and per-case eval results ignored; rerun this proof when Eval Lab/gdev-agent
+  baseline artifacts change materially.
+- Notes for next agent: the temporary `gdev_agent_liveproof` Compose stack may
+  still be running on port 8000; Runtime Grid Postgres/Redis may still be
+  running on ports 5432/6379.

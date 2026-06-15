@@ -1185,3 +1185,53 @@ Context-Refs:
   - docs/KNOWN_LIMITS.md
   - docs/IMPLEMENTATION_CONTRACT.md#worker-network-and-secret-scope
   - docs/IMPLEMENTATION_CONTRACT.md#stub-mode-is-default
+
+---
+
+## T32: Operator-Run Live-Local Proof Snapshot
+
+State: done
+Owner: codex
+Phase: 12
+Type: evidence
+Depends-On: T31
+
+Objective: |
+  Run the implemented live-local proof against a real local `gdev-agent`
+  demo-mode stack, commit a stable reviewer snapshot of the observed result,
+  and ensure generated full-stack reports remain ignored by git.
+
+Acceptance-Criteria:
+  - id: AC-1
+    description: "A local gdev-agent demo-mode stack is operator-run before the proof and passes the demo flow."
+    verify: "LLM_MODE=demo DEMO_BASE_URL=http://localhost:8000 bash scripts/demo.sh"
+  - id: AC-2
+    description: "Runtime Grid full-stack live-local proof completes selected cases through queued workers against local gdev-agent HTTP."
+    verify: "GDEV_AGENT_WEBHOOK_SECRET=<env-only> PATH=.venv/bin:$PATH python -m agent_runtime_grid.cli proof full-stack-live-local --eval-lab-dataset ../Eval-Ground-Truth-Lab/datasets/gdev_agent/triage_v1.jsonl --eval-lab-report ../Eval-Ground-Truth-Lab/reports/gdev-agent/baseline_report.md --gdev-artifact ../gdev-agent/eval/results/last_run.json --gdev-base-url http://localhost:8000 --gdev-webhook-secret-env GDEV_AGENT_WEBHOOK_SECRET --jobs 20 --workers 4 --report reports/full-stack/live_local_runtime_report.md"
+  - id: AC-3
+    description: "Committed evidence snapshot records the observed run ID, counts, local boundaries, and no-model-cost claim without committing generated reports."
+    verify: "rg -n \"c4276927|completed jobs|operator-run|generated report\" docs/evidence/full-stack-live-local.md docs/EVIDENCE_INDEX.md"
+  - id: AC-4
+    description: "Generated full-stack report and per-case eval outputs are ignored by git."
+    verify: "git check-ignore -v reports/full-stack/live_local_runtime_report.md reports/full-stack/eval-results/gdev-agent-local/gdev-billing-refund-001.json"
+
+Files:
+  - .gitignore
+  - docs/evidence/full-stack-live-local.md
+  - docs/EVIDENCE_INDEX.md
+  - docs/tasks.md
+  - docs/CODEX_PROMPT.md
+  - docs/IMPLEMENTATION_JOURNAL.md
+
+Cost-Budget:
+  scope: local proof
+  max_cost_usd: 0
+  max_model_calls: 0
+  max_tool_calls: n/a
+  max_retries: 1
+  approval_required_when: "non-local egress, live model mode, committing generated reports with payloads, broader worker secret scope, recurring/scheduled live-local execution, or budget overrun"
+
+Context-Refs:
+  - docs/evidence/full-stack-live-local.md
+  - docs/EVIDENCE_INDEX.md
+  - .gitignore

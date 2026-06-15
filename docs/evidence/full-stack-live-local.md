@@ -43,6 +43,51 @@ PATH=.venv/bin:$PATH python -m agent_runtime_grid.cli proof full-stack-live-loca
 | duplicate finalization count | 0 |
 | secret handling | webhook secret value omitted from payloads, reports, and artifacts |
 
+## Latest Operator-Run Snapshot
+
+Date: 2026-06-15
+
+Setup:
+
+- `gdev-agent` ran in deterministic `LLM_MODE=demo` through a temporary local
+  Compose project with the API exposed at `http://localhost:8000`.
+- `gdev-agent` demo flow passed before the proof run: health, auth, signed
+  webhook, pending approval, approval execution, and metrics.
+- Runtime Grid used local Compose Postgres/Redis on `localhost:5432` and
+  `localhost:6379`.
+- The webhook secret value was provided only through the named environment
+  variable and was not committed.
+
+Generated report:
+
+- `reports/full-stack/live_local_runtime_report.md`
+- ignored by git; this snapshot is the committed reviewer surface
+
+Result:
+
+| Signal | Observed value |
+| --- | --- |
+| Grid run ID | `c4276927-3159-46fe-9a1c-f166bc40f4a4` |
+| selected cases | 20 |
+| completed jobs | 20 |
+| failed jobs | 0 |
+| DLQ count | 0 |
+| retry count | 0 |
+| timeout count | 0 |
+| duplicate finalization count | 0 |
+| checked artifacts | 20 |
+| valid artifacts | 20 |
+| completion rate | 100.00% |
+| artifact completeness | 100.00% |
+| queue lag p95 | 11.141s |
+| execution duration p95 | 2.858s |
+| estimated Runtime Grid model cost | $0 |
+
+Selected slices: the first 20 `triage_v1` cases, covering billing refund,
+account access, bug report, and moderation report cases. Runtime Grid made local
+HTTP calls to `gdev-agent`; model/provider behavior remained owned by
+`gdev-agent` demo mode.
+
 ## Limits
 
 This is local T1 evidence, not hosted operations or remote deployment proof. For

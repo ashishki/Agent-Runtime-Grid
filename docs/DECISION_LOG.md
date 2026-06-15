@@ -6,7 +6,7 @@ Last updated: 2026-06-11
 Purpose:
 
 - Lightweight retrieval surface for important decisions.
-- Points to canonical sources such as architecture, contract, tasks, review reports, and future ADRs.
+- Points to canonical sources such as architecture, evidence artifacts, benchmark reports, and ADRs.
 
 This file is not the source of truth. If an entry conflicts with a canonical document, the canonical document wins and this file must be corrected.
 
@@ -37,4 +37,3 @@ This file is not the source of truth. If an entry conflicts with a canonical doc
 ## Retrieval Notes
 
 - Read this file before changing architecture, runtime tier, cost boundaries, capability profiles, or retry/idempotency semantics.
-- If a task has `Context-Refs`, prefer those entries over scanning this file top-to-bottom.

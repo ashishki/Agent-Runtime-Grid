@@ -2,7 +2,7 @@
 
 Version: 1.0
 Last updated: 2026-06-11
-Status: Draft
+Status: Active
 
 ---
 
@@ -119,13 +119,13 @@ Until T12 adds project-owned cost telemetry, cost thresholds are manual-review b
 
 ## Capability Profiles
 
-| Profile | Status | Evaluation Artifact | Justification |
-|---------|--------|---------------------|---------------|
-| RAG | OFF | `docs/retrieval_eval.md` | v1 runtime does not need retrieval-backed answers. Any retrieval inside future sample jobs requires an ADR and profile activation. |
-| Tool-Use | OFF | `docs/tool_eval.md` | The runtime records and constrains job tools deterministically. LLM-directed unsafe tool selection is out of scope for v1. |
-| Agentic | OFF | `docs/agent_eval.md` | The control plane is not an agent loop. It runs jobs but does not let a model plan scheduling, retries, or safety decisions. |
-| Planning | OFF | `docs/plan_eval.md` | The product output is job execution and evidence reports, not structured plans for downstream execution. |
-| Compliance | OFF | `docs/compliance_eval.md` | No named compliance framework applies to v1 synthetic local data. Standard security and audit controls still apply. |
+| Profile | Status | Activation note | Justification |
+|---------|--------|-----------------|---------------|
+| RAG | OFF | Future activation requires an ADR and dedicated eval artifact. | v1 runtime does not need retrieval-backed answers. |
+| Tool-Use | OFF | Future activation requires an ADR and dedicated eval artifact. | The runtime records and constrains job tools deterministically. LLM-directed unsafe tool selection is out of scope for v1. |
+| Agentic | OFF | Future activation requires an ADR and dedicated eval artifact. | The control plane is not an agent loop. It runs jobs but does not let a model plan scheduling, retries, or safety decisions. |
+| Planning | OFF | Future activation requires an ADR and dedicated eval artifact. | The product output is job execution and evidence reports, not structured plans for downstream execution. |
+| Compliance | OFF | Future activation requires an ADR and dedicated eval artifact. | No named compliance framework applies to v1 synthetic local data. Standard security and audit controls still apply. |
 
 ---
 

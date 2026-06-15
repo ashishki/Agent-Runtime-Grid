@@ -2,7 +2,7 @@
 
 Version: 1.0
 Last updated: 2026-06-11
-Status: Draft
+Status: Active
 
 ---
 
@@ -132,7 +132,7 @@ Acceptance criteria:
 2. Job containers do not perform runtime package installation or toolchain mutation.
 3. New external side-effecting job types require a documented approval boundary before dispatch is allowed.
 4. Secrets are loaded only from environment variables or uncommitted local `.env` files and are never logged.
-5. Any proposal to move from T1 to T2/T3 requires an ADR and Phase 1 artifact update before implementation.
+5. Any proposal to move from T1 to T2/T3 requires an ADR plus architecture and evidence updates before implementation.
 
 Out of scope:
 

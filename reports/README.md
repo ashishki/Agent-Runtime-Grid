@@ -5,7 +5,7 @@ so local benchmark and failure-injection output does not churn repository
 history.
 
 Committed files in this directory describe report expectations and preserve
-empty directories. Stable reviewer snapshots live under `docs/evidence/`.
+empty directories. Stable evidence snapshots live under `docs/evidence/`.
 
 ## Current Reports
 
@@ -22,10 +22,6 @@ empty directories. Stable reviewer snapshots live under `docs/evidence/`.
 - `docs/evidence/full-stack-artifact-proof.md` - committed snapshot for the current cross-project artifact proof.
 - `docs/evidence/full-stack-live-local.md` - committed snapshot for the optional live-local proof mode.
 - `docs/evidence/failure-injection-pack-summary.md` - committed snapshot for the failure-injection report pack.
-
-## Planned Reports
-
-- Future reports are tracked in `docs/tasks.md`.
 
 ## Required Runtime Evidence
 
@@ -48,5 +44,5 @@ Reliability reports should include:
 - known limits for the run
 
 Smoke and 500-job reliability proof reports are generated from actual runtime
-state. The committed snapshots are reviewer-facing summaries with rerun commands;
+state. The committed snapshots are stable summaries with rerun commands;
 the generated reports remain the current-run outputs.

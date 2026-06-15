@@ -232,16 +232,14 @@ Until T12 adds project-owned cost telemetry, cost thresholds are manual-review b
 │   └── unit/
 ├── docs/
 │   ├── ARCHITECTURE.md
-│   ├── CODEX_PROMPT.md
 │   ├── COST_BUDGET.md
 │   ├── DECISION_LOG.md
 │   ├── EVIDENCE_INDEX.md
-│   ├── IMPLEMENTATION_CONTRACT.md
-│   ├── IMPLEMENTATION_JOURNAL.md
+│   ├── KNOWN_LIMITS.md
 │   ├── README.md
+│   ├── STACK_OVERVIEW.md
 │   ├── spec.md
-│   ├── tasks.md
-│   └── audit/
+│   └── evidence/
 └── reports/
 ```
 
@@ -268,9 +266,9 @@ Until T12 adds project-owned cost telemetry, cost thresholds are manual-review b
 
 ## Continuity and Retrieval Model
 
-- Canonical truth: `docs/ARCHITECTURE.md`, `docs/IMPLEMENTATION_CONTRACT.md`, `docs/tasks.md`, `docs/CODEX_PROMPT.md`, ADRs when created, audit reports, evidence artifacts, code, tests, and CI results.
-- Retrieval convenience: `docs/DECISION_LOG.md`, `docs/IMPLEMENTATION_JOURNAL.md`, `docs/EVIDENCE_INDEX.md`, benchmark reports, and task `Context-Refs`.
-- Scoped retrieval rule: implementers read the current task, contract, CODEX state, and task-specific `Context-Refs` before broad searching.
+- Canonical truth: `docs/ARCHITECTURE.md`, ADRs when created, evidence artifacts, code, tests, benchmark reports, and CI results.
+- Retrieval convenience: `docs/DECISION_LOG.md`, `docs/EVIDENCE_INDEX.md`, `docs/STACK_OVERVIEW.md`, `docs/KNOWN_LIMITS.md`, and benchmark reports.
+- Scoped retrieval rule: consult the architecture, decision log, and evidence index before broad searching.
 - Required lookup triggers: architecture changes, runtime-tier changes, cost-budget changes, external egress/tool permission changes, retry/idempotency semantics changes, open finding resolution, and benchmark baseline changes.
 - Generated context packets or semantic indexes are not in use for v1; if added later, they are navigation surfaces only and must cite canonical files.
 

@@ -1,8 +1,8 @@
 # Runtime Reliability 500 - Committed Evidence Snapshot
 
-This is a stable reviewer snapshot for the 500-job reliability proof. Generated
+This is a stable evidence snapshot for the 500-job reliability proof. Generated
 reports under `reports/` remain ignored by git; this file records the durable
-evidence shape a reviewer should expect.
+expected evidence shape.
 
 ## Scope
 

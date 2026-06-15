@@ -61,7 +61,7 @@ Setup:
 Generated report:
 
 - `reports/full-stack/live_local_runtime_report.md`
-- ignored by git; this snapshot is the committed reviewer surface
+- ignored by git; this snapshot is the committed evidence surface
 
 Result:
 

@@ -45,7 +45,7 @@ The current implementation proves the core runtime mechanics:
   artifacts, runs selected cases through Grid workers, and writes cross-linked
   runtime evidence
 - failure-injection report pack generation
-- committed reviewer snapshots under `docs/evidence/` for smoke, reliability,
+- committed evidence snapshots under `docs/evidence/` for smoke, reliability,
   failure-injection, and cross-project artifact proof surfaces
 - operator queue inspection, stale recovery, and pending lease renewal primitives
 - automated worker heartbeat renewal for active long-running jobs
@@ -161,8 +161,6 @@ Core references:
 - `docs/ARCHITECTURE_DIAGRAM.md` - compact runtime and evidence-flow diagram
 - `docs/STACK_OVERVIEW.md` - three-project stack map and live/artifact proof split
 - `docs/CASE_STUDY.md` - concise reliability and integration case study
-- `docs/IMPLEMENTATION_CONTRACT.md` - immutable implementation rules
-- `docs/tasks.md` - task plan and acceptance criteria
 - `docs/EVIDENCE_INDEX.md` - evidence and verification pointers
 - `docs/KNOWN_LIMITS.md` - known limits and non-goals
 - `docs/SECURITY_BOUNDARIES.md` - API auth and local bind safety rules
@@ -170,7 +168,7 @@ Core references:
 - `docs/INTEGRATIONS.md` - Eval Lab and gdev-agent integration boundaries
 - `docs/OPERATIONS.md` - local operator commands for queue inspection and stale recovery
 - `reports/README.md` - report locations and expectations
-- `docs/evidence/` - committed reviewer snapshots for generated report surfaces
+- `docs/evidence/` - committed evidence snapshots for generated report surfaces
 
 ## Operational Guarantees
 
@@ -187,7 +185,7 @@ Current local guarantees:
 - stub mode blocks provider calls and live dispatch requires explicit budgets
 - local mode stays inside T1 Docker Compose boundaries
 
-Planned proof gaps are tracked in `docs/tasks.md`:
+Current proof coverage:
 
 - T16 real 100-job smoke command - implemented
 - T17 real 500-job reliability proof - implemented
@@ -207,7 +205,7 @@ Planned proof gaps are tracked in `docs/tasks.md`:
 Reports are written under `reports/`. Generated report contents are ignored by
 git so local benchmark output does not churn history. Stable placeholders,
 report documentation, and curated committed snapshots under `docs/evidence/`
-are committed for reviewer inspection.
+are committed for inspection.
 
 Evidence index: `docs/EVIDENCE_INDEX.md`.
 

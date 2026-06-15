@@ -1,6 +1,6 @@
 # Failure Injection Pack - Committed Evidence Snapshot
 
-This is a stable reviewer snapshot for the failure-injection report pack.
+This is a stable evidence snapshot for the failure-injection report pack.
 Generated reports under `reports/failure-injection/` remain ignored by git.
 
 ## Rerun Command

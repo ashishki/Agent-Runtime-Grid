@@ -1,6 +1,6 @@
 # Runtime Smoke 100 - Committed Evidence Snapshot
 
-This is a stable reviewer snapshot for the real 100-job smoke proof. Generated
+This is a stable evidence snapshot for the real 100-job smoke proof. Generated
 reports under `reports/` remain ignored by git to avoid local run churn.
 
 ## Scope

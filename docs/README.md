@@ -4,20 +4,20 @@ Status: active
 
 ## Purpose
 
-This directory contains the Phase 1 governance, architecture, task, budget, evidence, and audit artifacts for Agent Runtime Grid.
+This directory contains architecture, budget, evidence, operations, integration,
+and known-limit artifacts for Agent Runtime Grid.
 
 ## Start Here
 
 - `docs/ARCHITECTURE.md` - canonical architecture, mode, runtime tier, scope, and boundaries.
-- `docs/tasks.md` - forward implementation contract and task dependency chain.
-- `docs/CODEX_PROMPT.md` - current Codex session state and next task.
-- `docs/IMPLEMENTATION_CONTRACT.md` - immutable implementation rules.
+- `docs/STACK_OVERVIEW.md` - three-project reliability stack map.
+- `docs/EVIDENCE_INDEX.md` - durable evidence pointers.
+- `docs/KNOWN_LIMITS.md` - explicit local and production-boundary limits.
 
 ## Current State
 
 - Mode: Standard.
-- Phase: 1 planning package bootstrapped.
-- Next task: `T01: Project Skeleton`.
+- Phase: local v1 evidence baseline complete.
 - Capability profiles: RAG OFF, Tool-Use OFF, Agentic OFF, Planning OFF, Compliance OFF.
 - Runtime tier: T1 local Docker Compose.
 - Default benchmark path: stub jobs with $0 model cost.
@@ -28,21 +28,18 @@ This directory contains the Phase 1 governance, architecture, task, budget, evid
 
 ## Contracts, Proof, and Evals
 
-- `docs/IMPLEMENTATION_CONTRACT.md` - implementation rules and forbidden actions.
 - `docs/COST_BUDGET.md` - model and benchmark cost boundaries.
 - `docs/EVIDENCE_INDEX.md` - durable evidence pointers.
-- `docs/audit/PHASE1_AUDIT.md` - Phase 1 validation result.
-
-## Active Tasks
-
-- `docs/tasks.md#t01-project-skeleton` - first implementation task after Phase 1 validation passes.
+- `docs/evidence/` - committed evidence snapshots for generated report surfaces.
 
 ## Known Gaps
 
-- No application code exists yet; T01 creates the skeleton.
-- CI workflow is structurally bootstrapped; T02 makes it runnable against the project skeleton.
-- Cost telemetry is planned in T12; current live LLM thresholds are manual-review boundaries and runtime gates.
+- Runtime proof is local-first and deterministic by default.
+- Generated reports under `reports/` remain ignored; committed snapshots live in
+  `docs/evidence/`.
+- Live-local gdev-agent proof is optional and operator-run.
 
 ## Authority
 
-This README is a navigation index. Canonical artifacts, tests, evals, ADRs, proof receipts, and review reports remain authoritative.
+This README is a navigation index. Canonical artifacts, tests, evals, ADRs,
+proof receipts, and report artifacts remain authoritative.

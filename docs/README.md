@@ -12,6 +12,9 @@ and known-limit artifacts for Agent Runtime Grid.
 - `docs/ARCHITECTURE.md` - canonical architecture, mode, runtime tier, scope, and boundaries.
 - `docs/STACK_OVERVIEW.md` - three-project reliability stack map.
 - `docs/EVIDENCE_INDEX.md` - durable evidence pointers.
+- `docs/AUTONOMOUS_ROUTINE_CONTRACT.md` - bounded routine trigger/runtime contract.
+- `docs/TRIGGER_SECURITY.md` - trigger security controls for manual, cron,
+  webhook, and event starts.
 - `docs/KNOWN_LIMITS.md` - explicit local and production-boundary limits.
 
 ## Current State
@@ -31,6 +34,8 @@ and known-limit artifacts for Agent Runtime Grid.
 - `docs/COST_BUDGET.md` - model and benchmark cost boundaries.
 - `docs/EVIDENCE_INDEX.md` - durable evidence pointers.
 - `docs/evidence/` - committed evidence snapshots for generated report surfaces.
+- `docs/evidence/routine-reliability-report.md` - starter contract for future
+  routine reliability reports.
 
 ## Known Gaps
 
@@ -38,6 +43,8 @@ and known-limit artifacts for Agent Runtime Grid.
 - Generated reports under `reports/` remain ignored; committed snapshots live in
   `docs/evidence/`.
 - Live-local gdev-agent proof is optional and operator-run.
+- Routine contracts are deployment evidence templates only; Grid remains a T1
+  runtime, not a general scheduler or autonomous swarm.
 
 ## Authority
 

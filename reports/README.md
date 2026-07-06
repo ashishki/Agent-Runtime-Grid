@@ -17,6 +17,8 @@ empty directories. Stable evidence snapshots live under `docs/evidence/`.
 - `reports/failure-injection/*.md` - failure scenario report pack produced by T25.
 - `reports/full-stack/runtime_report.md` - cross-project artifact proof output produced by T29.
 - `reports/full-stack/live_local_runtime_report.md` - optional full-stack live-local proof output produced by T31.
+- `reports/routines/*.md` - future routine reliability report outputs; contract
+  documented in `docs/evidence/routine-reliability-report.md`.
 - `docs/evidence/runtime-smoke-100.md` - committed snapshot for the generated 100-job smoke report.
 - `docs/evidence/runtime-reliability-500.md` - committed snapshot for the generated 500-job reliability report.
 - `docs/evidence/full-stack-artifact-proof.md` - committed snapshot for the current cross-project artifact proof.
@@ -42,6 +44,11 @@ Reliability reports should include:
 - estimated cost
 - failure classification
 - known limits for the run
+
+Routine reliability reports should additionally include routine name, trigger
+type, run window, success rate, retry rate, timeout rate, DLQ rate, cost per
+completed job, p95 queue delay, p95 runtime, fallback count, artifact
+integrity, and known limits.
 
 Smoke and 500-job reliability proof reports are generated from actual runtime
 state. The committed snapshots are stable summaries with rerun commands;

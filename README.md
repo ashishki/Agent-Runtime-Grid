@@ -49,6 +49,8 @@ The current implementation proves the core runtime mechanics:
   failure-injection, and cross-project artifact proof surfaces
 - operator queue inspection, stale recovery, and pending lease renewal primitives
 - automated worker heartbeat renewal for active long-running jobs
+- bounded autonomous routine contract for manual, cron, webhook, and event
+  triggers without expanding Grid beyond T1 runtime responsibilities
 
 Current baseline: `80 passed` with one upstream FastAPI/Starlette deprecation warning.
 
@@ -167,6 +169,8 @@ Core references:
 - `docs/OBSERVABILITY.md` - queue/backpressure metrics and report definitions
 - `docs/INTEGRATIONS.md` - Eval Lab and gdev-agent integration boundaries
 - `docs/OPERATIONS.md` - local operator commands for queue inspection and stale recovery
+- `docs/AUTONOMOUS_ROUTINE_CONTRACT.md` - bounded routine trigger/runtime contract
+- `docs/TRIGGER_SECURITY.md` - cron/webhook/event/manual trigger security boundaries
 - `reports/README.md` - report locations and expectations
 - `docs/evidence/` - committed evidence snapshots for generated report surfaces
 
@@ -232,5 +236,6 @@ Short version:
 - not a SaaS or multi-tenant billing system
 - not an autonomous swarm
 - not exactly-once execution
+- not a general scheduler for arbitrary unbounded routines
 
 The v1 target is narrower: local-first reliability evidence for many AI and agent jobs under queue, worker, retry, timeout, cancellation, artifact, cost, and reporting controls.

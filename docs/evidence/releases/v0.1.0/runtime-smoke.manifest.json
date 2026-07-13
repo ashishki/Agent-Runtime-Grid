@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "path": "runtime-smoke.md",
+      "sha256": "dd755dd40c660218f8dd59f505d18e3ebbd3d900f75ceee0f9aca033c6289fd2"
+    },
+    {
+      "path": "runtime-smoke.json",
+      "sha256": "93863b224f7c07904b83883cd3c8e6a18c8983d2469216dbec87691d5529fbee"
+    }
+  ],
+  "schema_version": "agent-runtime-grid.evidence-manifest.v1"
+}

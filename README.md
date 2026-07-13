@@ -110,6 +110,11 @@ snapshots under [`docs/evidence/`](docs/evidence/) show report shape, while the
 committed snapshot is illustrative until its command, source revision, inputs,
 and checksums are independently verified.
 
+The [`v0.1.0 release evidence`](docs/evidence/releases/v0.1.0/README.md) is a
+content-addressed exception: it records a clean source revision, machine-readable
+run data, the human-readable report, and a verifier manifest for a 20-job local
+stub smoke run.
+
 Important evidence terms:
 
 - `idempotency replay` means the same submission key returned the existing job;

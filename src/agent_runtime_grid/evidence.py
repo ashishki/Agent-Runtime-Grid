@@ -15,6 +15,11 @@ from typing import Any
 
 RUN_EVIDENCE_SCHEMA = "agent-runtime-grid.run-evidence.v1"
 MANIFEST_SCHEMA = "agent-runtime-grid.evidence-manifest.v1"
+COMMITTED_RELEASE_MANIFEST = Path("docs/evidence/releases/v0.1.0/runtime-smoke.manifest.json")
+COMMITTED_RELEASE_MANIFEST_SHA256 = (
+    "07442b769fad42a1664cc3adc7a11d73cb2041ceb61f65e402087e096d5b12ed"
+)
+COMMITTED_RELEASE_SOURCE_REVISION = "ddf533b36bbca0fd90a3093984d0b3f36e8ebeab"
 
 
 class EvidenceVerificationError(RuntimeError):
@@ -26,6 +31,15 @@ class EvidenceBundle:
     report_path: Path
     data_path: Path
     manifest_path: Path
+
+
+@dataclass(frozen=True)
+class CommittedEvidenceVerification:
+    manifest_path: str
+    content_address: str
+    source_revision: str
+    submitted_jobs: int
+    valid_artifacts: int
 
 
 def portable_path(value: str | Path, *, namespace: str = "artifact") -> str:
@@ -148,6 +162,190 @@ def verify_evidence_manifest(manifest_path: Path) -> None:
         raise EvidenceVerificationError(
             f"unexpected evidence sidecar(s): {', '.join(sorted(unexpected))}"
         )
+
+
+def verify_committed_release_evidence(repository_root: Path) -> CommittedEvidenceVerification:
+    root = repository_root.resolve()
+    manifest_path = root / COMMITTED_RELEASE_MANIFEST
+    if manifest_path.is_symlink() or not manifest_path.is_file():
+        raise EvidenceVerificationError(
+            f"committed release manifest is missing or unsafe: {COMMITTED_RELEASE_MANIFEST}"
+        )
+
+    manifest_sha256 = _sha256(manifest_path)
+    if manifest_sha256 != COMMITTED_RELEASE_MANIFEST_SHA256:
+        raise EvidenceVerificationError(
+            "committed release manifest content address mismatch: "
+            f"expected {COMMITTED_RELEASE_MANIFEST_SHA256}, got {manifest_sha256}"
+        )
+    verify_evidence_manifest(manifest_path)
+
+    data_path = manifest_path.with_name("runtime-smoke.json")
+    try:
+        payload = json.loads(data_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise EvidenceVerificationError(f"cannot read committed release data: {data_path}") from exc
+    _verify_committed_release_semantics(payload)
+
+    report = payload["report"]
+    artifact_integrity = report["artifact_integrity"]
+    return CommittedEvidenceVerification(
+        manifest_path=COMMITTED_RELEASE_MANIFEST.as_posix(),
+        content_address=f"sha256:{COMMITTED_RELEASE_MANIFEST_SHA256}",
+        source_revision=COMMITTED_RELEASE_SOURCE_REVISION,
+        submitted_jobs=report["submitted_jobs"],
+        valid_artifacts=artifact_integrity["valid_count"],
+    )
+
+
+def _verify_committed_release_semantics(payload: Any) -> None:
+    if not isinstance(payload, dict):
+        raise EvidenceVerificationError("committed release data must be a JSON object")
+
+    expected_top_level = {
+        "schema_version": RUN_EVIDENCE_SCHEMA,
+        "command": "smoke",
+        "seed": None,
+        "source_revision": {
+            "commit": COMMITTED_RELEASE_SOURCE_REVISION,
+            "dirty": False,
+        },
+        "config": {
+            "artifact_root": "artifacts",
+            "failure_rate": 0.0,
+            "jobs": 20,
+            "mode": "stub",
+            "workers": 4,
+        },
+        "environment": {
+            "implementation": "CPython",
+            "machine": "x86_64",
+            "platform": "Linux",
+            "python": "3.12.3",
+        },
+    }
+    for field, expected in expected_top_level.items():
+        _require_committed_value(payload.get(field), expected, field)
+
+    report = payload.get("report")
+    if not isinstance(report, dict):
+        raise EvidenceVerificationError("committed release report must be a JSON object")
+    expected_report = {
+        "title": "Load Smoke Report",
+        "source": "runtime_state:artifacts",
+        "submitted_jobs": 20,
+        "lifecycle_counts": {
+            "cancelled": 0,
+            "completed": 20,
+            "dlq": 0,
+            "failed": 0,
+            "queued": 0,
+            "running": 0,
+            "timed_out": 0,
+        },
+        "completion_rate": 1.0,
+        "duplicate_terminal_event_count": 0,
+        "finalization_conflict_attempt_count": 0,
+        "retry_count": 0,
+        "artifact_completeness": 1.0,
+        "failure_classification": {},
+        "estimated_cost_usd": "0",
+        "idempotency_replay_count": 0,
+        "injected_failure_count": 0,
+    }
+    for field, expected in expected_report.items():
+        _require_committed_value(report.get(field), expected, f"report.{field}")
+
+    backpressure = report.get("backpressure")
+    if not isinstance(backpressure, dict):
+        raise EvidenceVerificationError("committed release backpressure must be a JSON object")
+    for field in (
+        "consumer_lag",
+        "dlq_count",
+        "leased_jobs",
+        "oldest_pending_age_seconds",
+        "queue_depth",
+        "retry_rate",
+        "running_jobs",
+        "worker_utilization",
+    ):
+        _require_committed_value(backpressure.get(field), 0, f"report.backpressure.{field}")
+    _require_committed_value(
+        report.get("queue_lag_seconds"),
+        backpressure.get("p95_queue_wait_seconds"),
+        "report.queue_lag_seconds",
+    )
+    _require_committed_value(
+        report.get("p95_duration_seconds"),
+        backpressure.get("p95_execution_seconds"),
+        "report.p95_duration_seconds",
+    )
+
+    artifact_integrity = report.get("artifact_integrity")
+    if not isinstance(artifact_integrity, dict):
+        raise EvidenceVerificationError("committed release artifact integrity must be an object")
+    _require_committed_value(
+        artifact_integrity.get("checked_count"), 20, "report.artifact_integrity.checked_count"
+    )
+    _require_committed_value(
+        artifact_integrity.get("valid_count"), 20, "report.artifact_integrity.valid_count"
+    )
+    artifacts = artifact_integrity.get("artifacts")
+    if not isinstance(artifacts, list) or len(artifacts) != 20:
+        raise EvidenceVerificationError(
+            "committed release artifact integrity must contain exactly 20 rows"
+        )
+
+    run_id = report.get("run_id")
+    if not isinstance(run_id, str) or not run_id:
+        raise EvidenceVerificationError("committed release run_id must be a non-empty string")
+    job_ids: set[str] = set()
+    for index, artifact in enumerate(artifacts):
+        if not isinstance(artifact, dict):
+            raise EvidenceVerificationError(f"committed artifact row {index} must be an object")
+        job_id = artifact.get("job_id")
+        if not isinstance(job_id, str) or not job_id or job_id in job_ids:
+            raise EvidenceVerificationError(
+                f"committed artifact row {index} has a missing or duplicate job_id"
+            )
+        job_ids.add(job_id)
+        _require_committed_value(artifact.get("run_id"), run_id, f"artifact[{index}].run_id")
+        _require_committed_value(
+            artifact.get("path"),
+            f"artifact://{job_id}/attempt-1.json",
+            f"artifact[{index}].path",
+        )
+        _require_committed_value(
+            artifact.get("attempt_number"), 1, f"artifact[{index}].attempt_number"
+        )
+        _require_committed_value(
+            artifact.get("eval_result_path"), None, f"artifact[{index}].eval_result_path"
+        )
+        if not _is_sha256(artifact.get("sha256")):
+            raise EvidenceVerificationError(f"artifact[{index}].sha256 must be lowercase SHA-256")
+        if not _is_sha256(artifact.get("input_digest")):
+            raise EvidenceVerificationError(
+                f"artifact[{index}].input_digest must be lowercase SHA-256"
+            )
+        size_bytes = artifact.get("size_bytes")
+        if not isinstance(size_bytes, int) or size_bytes <= 0:
+            raise EvidenceVerificationError(f"artifact[{index}].size_bytes must be positive")
+
+
+def _require_committed_value(actual: Any, expected: Any, field: str) -> None:
+    if actual != expected:
+        raise EvidenceVerificationError(
+            "committed release semantic mismatch for "
+            f"{field}: expected {expected!r}, got {actual!r}"
+        )
+
+
+def _is_sha256(value: Any) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == 64
+        and all(character in "0123456789abcdef" for character in value)
+    )
 
 
 def _report_payload(report: Any) -> dict[str, Any]:

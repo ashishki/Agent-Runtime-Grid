@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,7 +14,11 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from agent_runtime_grid.domain.jobs import JobSubmission
-from agent_runtime_grid.evidence import EvidenceVerificationError, verify_evidence_manifest
+from agent_runtime_grid.evidence import (
+    EvidenceVerificationError,
+    verify_committed_release_evidence,
+    verify_evidence_manifest,
+)
 from agent_runtime_grid.queue.redis_streams import RedisStreamsQueue
 from agent_runtime_grid.queue.types import QueueJobMessage
 from agent_runtime_grid.storage.models import job_events_table, jobs_table
@@ -214,6 +219,30 @@ def verify_evidence_command(
         typer.echo(f"evidence verification failed: {exc}", err=True)
         raise typer.Exit(code=1) from exc
     typer.echo(f"verified: {manifest}")
+
+
+@app.command("verify-committed-evidence")
+def verify_committed_evidence_command(
+    repository_root: Annotated[Path, typer.Option("--repository-root")] = Path("."),
+) -> None:
+    try:
+        result = verify_committed_release_evidence(repository_root)
+    except EvidenceVerificationError as exc:
+        typer.echo(f"committed evidence verification failed: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(
+        json.dumps(
+            {
+                "content_address": result.content_address,
+                "manifest_path": result.manifest_path,
+                "source_revision": result.source_revision,
+                "submitted_jobs": result.submitted_jobs,
+                "valid_artifacts": result.valid_artifacts,
+                "verified": True,
+            },
+            sort_keys=True,
+        )
+    )
 
 
 from agent_runtime_grid.cli.benchmark import benchmark_app  # noqa: E402

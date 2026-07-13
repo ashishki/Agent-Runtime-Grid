@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: ["main", "master"]
 
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Tests + Lint
@@ -37,10 +40,12 @@ jobs:
           - 6379:6379
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.12"
           cache: "pip"
@@ -55,6 +60,9 @@ jobs:
 
       - name: Format check (ruff format)
         run: ruff format --check src tests
+
+      - name: Verify committed release evidence
+        run: agent-runtime-grid verify-committed-evidence
 
       - name: Run tests
         env:

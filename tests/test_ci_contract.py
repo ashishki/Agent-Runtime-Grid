@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 from typing import Any
 
@@ -5,6 +6,8 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CI_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "ci.yml"
+CHECKOUT_ACTION = "actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd"
+SETUP_PYTHON_ACTION = "actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1"
 
 
 def _load_ci_workflow() -> dict[str, Any]:
@@ -25,13 +28,20 @@ def _step_named(steps: list[dict[str, Any]], name_fragment: str) -> dict[str, An
 
 
 def test_ci_has_required_gates() -> None:
+    workflow = _load_ci_workflow()
     job = _test_job()
     steps = job["steps"]
 
-    assert any(step.get("uses") == "actions/checkout@v5" for step in steps)
+    assert workflow["permissions"] == {"contents": "read"}
+    checkout = next(step for step in steps if step.get("uses") == CHECKOUT_ACTION)
+    assert checkout["with"]["persist-credentials"] is False
 
-    setup_python = next(step for step in steps if step.get("uses") == "actions/setup-python@v6")
+    setup_python = next(step for step in steps if step.get("uses") == SETUP_PYTHON_ACTION)
     assert setup_python["with"]["python-version"] == "3.12"
+
+    action_references = [step["uses"] for step in steps if "uses" in step]
+    assert action_references
+    assert all(re.fullmatch(r"[^@]+@[0-9a-f]{40}", action) for action in action_references)
 
     install = _step_named(steps, "Install dependencies")
     assert "requirements-dev.txt" in install["run"]
@@ -41,6 +51,9 @@ def test_ci_has_required_gates() -> None:
 
     format_check = _step_named(steps, "ruff format")
     assert "ruff format --check" in format_check["run"]
+
+    committed_evidence = _step_named(steps, "committed release evidence")
+    assert committed_evidence["run"] == "agent-runtime-grid verify-committed-evidence"
 
     test = _step_named(steps, "Run tests")
     assert "python -m pytest" in test["run"]

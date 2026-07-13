@@ -25,6 +25,13 @@ empty directories. Stable evidence snapshots live under `docs/evidence/`.
 - `docs/evidence/full-stack-live-local.md` - committed snapshot for the optional live-local proof mode.
 - `docs/evidence/failure-injection-pack-summary.md` - committed snapshot for the failure-injection report pack.
 
+Real smoke, reliability, and full-stack commands also write a same-stem `.json`
+file and `.manifest.json` checksum manifest. Verify a bundle with:
+
+```bash
+agent-runtime-grid verify-evidence --manifest reports/smoke.manifest.json
+```
+
 ## Required Runtime Evidence
 
 Reliability reports should include:
@@ -35,7 +42,8 @@ Reliability reports should include:
 - retry count
 - timeout count
 - DLQ count
-- duplicate-finalization count
+- finalization conflict-attempt count
+- duplicate terminal-event invariant count
 - queue lag p95
 - execution duration p95
 - queue/backpressure section
@@ -52,4 +60,6 @@ integrity, and known limits.
 
 Smoke and 500-job reliability proof reports are generated from actual runtime
 state. The committed snapshots are stable summaries with rerun commands;
-the generated reports remain the current-run outputs.
+the generated reports remain the current-run outputs. Manifests make local
+modification detectable; they do not provide immutable storage or independent
+attestation.

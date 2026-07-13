@@ -40,11 +40,17 @@ Worker-derived field:
 - `agent_runtime_grid_queue_wait_p95_seconds`
 - `agent_runtime_grid_queue_execution_p95_seconds`
 
-Existing counters and histograms still cover retries, timeouts, failures, duplicate finalization, artifacts, estimated cost, and job duration.
+Existing counters and histograms cover retries, timeouts, failures, terminal
+invariant violations, rejected finalization attempts, artifacts, estimated cost,
+and job duration. The authoritative finalization counts in run reports come from
+Postgres; the in-process Prometheus objects are not a connected dashboard claim.
 
 ## Reports
 
-Smoke and v1 reliability reports include a `queue/backpressure` section. The section is generated from the same `QueueBackpressureSnapshot` when a real queue is available. Configured-only reports fall back to zero queue values and keep the legacy reliability fields for compatibility.
+Smoke and v1 reliability reports include a `queue/backpressure` section. Real
+proof commands also write versioned JSON plus a SHA-256 manifest. The local
+verifier detects modified, missing, or extra sidecars. These files are
+tamper-evident, not immutable or independently attested.
 
 The report timing fields use these definitions:
 

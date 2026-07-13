@@ -12,8 +12,8 @@ from agent_runtime_grid.domain.jobs import JobRecord, JobSubmission
 from agent_runtime_grid.queue.redis_streams import RedisStreamsQueue
 from agent_runtime_grid.queue.types import QueueJobMessage
 from agent_runtime_grid.storage.finalization import (
-    duplicate_finalization_metric_value,
-    reset_duplicate_finalization_metric_for_tests,
+    duplicate_terminal_event_count,
+    finalization_conflict_attempt_count,
 )
 from agent_runtime_grid.storage.models import (
     job_events_table,
@@ -158,6 +158,16 @@ async def _finalization_count(session_factory: async_sessionmaker[AsyncSession])
     return count
 
 
+async def _finalization_guard_counts(
+    session_factory: async_sessionmaker[AsyncSession],
+) -> tuple[int, int]:
+    async with session_factory() as session:
+        return (
+            await finalization_conflict_attempt_count(session),
+            await duplicate_terminal_event_count(session),
+        )
+
+
 @pytest.mark.asyncio
 async def test_stale_lease_is_detected(
     session_factory: async_sessionmaker[AsyncSession],
@@ -181,7 +191,6 @@ async def test_stale_job_requeues_and_completes_once(
     session_factory: async_sessionmaker[AsyncSession],
     queue: RedisStreamsQueue,
 ) -> None:
-    reset_duplicate_finalization_metric_for_tests()
     await _lease_and_mark_running(session_factory, queue, max_retries=1)
 
     result = await recover_stale_leases(
@@ -215,7 +224,7 @@ async def test_stale_job_requeues_and_completes_once(
     assert events[-1][1]["attempt_number"] == 2
     assert await _job_status(session_factory) == "completed"
     assert await _finalization_count(session_factory) == 1
-    assert duplicate_finalization_metric_value() == 0
+    assert await _finalization_guard_counts(session_factory) == (0, 0)
 
 
 @pytest.mark.asyncio
@@ -224,7 +233,6 @@ async def test_exhausted_stale_recovery_routes_to_dlq_without_duplicate_finaliza
     session_factory: async_sessionmaker[AsyncSession],
     queue: RedisStreamsQueue,
 ) -> None:
-    reset_duplicate_finalization_metric_for_tests()
     await _lease_and_mark_running(session_factory, queue, max_retries=0)
 
     result = await recover_stale_leases(
@@ -246,4 +254,4 @@ async def test_exhausted_stale_recovery_routes_to_dlq_without_duplicate_finaliza
     assert events[-1][1]["retryable"] is True
     assert await _job_status(session_factory) == "failed"
     assert await _finalization_count(session_factory) == 1
-    assert duplicate_finalization_metric_value() == 0
+    assert await _finalization_guard_counts(session_factory) == (0, 0)

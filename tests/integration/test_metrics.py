@@ -11,6 +11,7 @@ def test_required_runtime_metrics_exposed() -> None:
     metrics.timeout_total.inc()
     metrics.failure_total.inc()
     metrics.dlq_total.inc()
+    metrics.finalization_conflict_attempt_total.inc()
     metrics.artifact_total.inc()
     metrics.estimated_cost_usd.inc(0)
 

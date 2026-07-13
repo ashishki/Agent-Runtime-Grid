@@ -1,7 +1,7 @@
 # Evidence Index - Agent Runtime Grid
 
 Version: 1.0
-Last updated: 2026-06-14
+Last updated: 2026-07-13
 
 Purpose:
 
@@ -29,7 +29,7 @@ Maintain this file for:
 | T04 job repository | integration tests | `tests/integration/test_job_repository.py` | Postgres job creation, submitted event append, idempotency-key replay and conflict behavior | 2026-06-11 | Yes |
 | T05 queue adapter | integration tests | `tests/integration/test_queue_adapter.py` | Redis Streams publish, lease, acknowledge, and DLQ behavior | 2026-06-11 | Yes |
 | T06 worker lifecycle | integration tests | `tests/integration/test_worker_lifecycle.py` | Stub worker success, transient retry/requeue, and policy failure state transitions | 2026-06-11 | Yes |
-| T07 idempotent finalization | integration tests | `tests/integration/test_idempotent_finalization.py` | Racing terminal finalization, replayed queue no-op, and duplicate-finalization metric invariant | 2026-06-11 | Yes |
+| T07 idempotent finalization | integration tests | `tests/integration/test_idempotent_finalization.py` | Racing terminal finalization, durable rejected-attempt count, replayed queue no-op, and zero duplicate terminal-event invariant | 2026-07-13 | Yes |
 | T08 artifacts and logs | integration tests | `tests/integration/test_artifacts.py`, `tests/integration/test_logging.py` | JSON artifact write/metadata hashing and sanitized structured job log records | 2026-06-11 | Yes |
 | T09 timeout and cancellation | integration tests | `tests/integration/test_timeout_cancellation.py` | Timed-out jobs, queued cancellation, and running cancellation terminal paths | 2026-06-11 | Yes |
 | T10 observability | integration tests | `tests/integration/test_metrics.py`, `tests/integration/test_tracing.py`, `tests/integration/test_observability_safety.py` | Required metric exposure, linked trace spans, and observability secret/payload filtering | 2026-06-11 | Yes |
@@ -56,6 +56,8 @@ Maintain this file for:
 | T31 full-stack live-local proof | integration tests, CLI command, documentation | `tests/integration/test_full_stack_proof.py`, `tests/integration/test_gdev_agent_integration.py`, `src/agent_runtime_grid/cli/proof.py`, `src/agent_runtime_grid/jobs/gdev_agent.py`, `docs/INTEGRATIONS.md` | Optional localhost gdev-agent `/webhook` execution through Grid workers with operator-supplied local config, env-only webhook secret lookup, sanitized artifacts, and no Runtime Grid live model calls | 2026-06-14 | Yes |
 | T32 operator-run live-local snapshot | local proof, documentation | `docs/evidence/full-stack-live-local.md`, `.gitignore` | Operator-run local gdev-agent demo-mode proof completed 20/20 queued HTTP jobs through Runtime Grid and fixed generated full-stack report ignore rules | 2026-06-15 | Yes |
 | Bounded routine contract | documentation/test | `docs/AUTONOMOUS_ROUTINE_CONTRACT.md`, `docs/TRIGGER_SECURITY.md`, `docs/evidence/routine-reliability-report.md`, `tests/test_routine_contract_docs.py` | Routine trigger/runtime contract, trigger security controls, and required reliability report metrics for manual/cron/webhook/event bounded routines | 2026-07-06 | Yes |
+| T33 machine-readable evidence | implementation/tests | `src/agent_runtime_grid/evidence.py`, `tests/test_evidence_bundle.py` | Versioned JSON run record, portable paths, source/environment/config metadata, atomic writes, SHA-256 manifest, and modified/missing/extra/symlink/path-traversal rejection | 2026-07-13 | Yes |
+| T34 database reset safety | implementation/tests | `src/agent_runtime_grid/storage/safety.py`, `tests/test_database_reset_safety.py` | Explicit reset flag and refusal of remote or unrelated database targets | 2026-07-13 | Yes |
 
 ---
 

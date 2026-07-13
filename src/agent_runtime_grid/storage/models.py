@@ -67,6 +67,18 @@ job_finalizations_table = Table(
     Column("created_at", DateTime(timezone=True), nullable=False, server_default=func.now()),
 )
 
+finalization_conflict_attempts_table = Table(
+    "finalization_conflict_attempts",
+    metadata,
+    Column("id", BigInteger, primary_key=True, autoincrement=True),
+    Column("job_id", UUID(as_uuid=True), ForeignKey("jobs.id", ondelete="CASCADE"), nullable=False),
+    Column("run_id", UUID(as_uuid=True), nullable=False),
+    Column("attempted_status", String(32), nullable=False),
+    Column("attempted_event_type", String(64), nullable=False),
+    Column("trace_id", String(128), nullable=False),
+    Column("created_at", DateTime(timezone=True), nullable=False, server_default=func.now()),
+)
+
 artifacts_table = Table(
     "artifacts",
     metadata,

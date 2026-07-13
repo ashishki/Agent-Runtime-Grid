@@ -1,0 +1,35 @@
+name: Runtime defect
+description: Reproduce a bounded lifecycle, queue, storage, or worker defect.
+title: "[defect] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: invariant
+    attributes:
+      label: Violated invariant
+      description: State the expected deterministic runtime rule.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Include revision, command, sanitized inputs, and observed output.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Python, Postgres, Redis, OS, and container versions.
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety checks
+      options:
+        - label: The report contains no secrets or private data.
+          required: true
+        - label: The reproduction does not target production infrastructure.
+          required: true

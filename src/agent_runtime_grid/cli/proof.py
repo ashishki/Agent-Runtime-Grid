@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -16,10 +17,12 @@ from agent_runtime_grid.artifacts.store import ArtifactStore
 from agent_runtime_grid.cli.benchmark import ReliabilityReport, render_reliability_report
 from agent_runtime_grid.cli.smoke import build_smoke_report
 from agent_runtime_grid.domain.jobs import JobSubmission
+from agent_runtime_grid.evidence import portable_path, write_evidence_bundle
 from agent_runtime_grid.queue.redis_streams import RedisStreamsQueue
 from agent_runtime_grid.queue.types import QueueJobMessage
 from agent_runtime_grid.storage.models import metadata
 from agent_runtime_grid.storage.repositories import JobRepository
+from agent_runtime_grid.storage.safety import UnsafeDatabaseResetError, require_safe_local_reset
 from agent_runtime_grid.worker.loop import Worker
 
 DEFAULT_DATABASE_URL = (
@@ -158,8 +161,32 @@ async def run_full_stack_proof(
         inputs=inputs,
         selected_case_ids=tuple(_case_id(case) for case in cases),
     )
-    report_path.parent.mkdir(parents=True, exist_ok=True)
-    report_path.write_text(render_full_stack_report(result), encoding="utf-8")
+    write_evidence_bundle(
+        report_path=report_path,
+        rendered_report=render_full_stack_report(result),
+        report=report,
+        command=inputs.proof_mode,
+        config={
+            "candidate_id": inputs.candidate_id,
+            "jobs": len(cases),
+            "workers": workers,
+            "artifact_root": artifact_root,
+            "inputs": {
+                "eval_lab_dataset": {
+                    "path": portable_path(inputs.eval_lab_dataset_path, namespace="eval-dataset"),
+                    "sha256": _file_sha256(inputs.eval_lab_dataset_path),
+                },
+                "eval_lab_report": {
+                    "path": portable_path(inputs.eval_lab_report_path, namespace="eval-report"),
+                    "sha256": _file_sha256(inputs.eval_lab_report_path),
+                },
+                "gdev_artifact": {
+                    "path": portable_path(inputs.gdev_artifact_path, namespace="gdev-artifact"),
+                    "sha256": _file_sha256(inputs.gdev_artifact_path),
+                },
+            },
+        },
+    )
     return result
 
 
@@ -176,7 +203,7 @@ def validate_cross_project_inputs(
         raise FullStackProofError(f"Eval Lab dataset not found: {eval_lab_dataset_path}")
     if not eval_lab_report_path.is_file():
         raise FullStackProofError(f"Eval Lab report not found: {eval_lab_report_path}")
-    if not gdev_artifact_path.exists():
+    if not gdev_artifact_path.is_file():
         raise FullStackProofError(f"gdev-agent artifact path not found: {gdev_artifact_path}")
     normalized_candidate_id = candidate_id.strip()
     if not normalized_candidate_id:
@@ -214,22 +241,26 @@ def validate_full_stack_report(*, report: ReliabilityReport, expected_jobs: int)
 
 def render_full_stack_report(result: FullStackProofResult) -> str:
     input_paths = result.inputs
+    eval_dataset_path = portable_path(input_paths.eval_lab_dataset_path, namespace="eval-dataset")
+    eval_report_path = portable_path(input_paths.eval_lab_report_path, namespace="eval-report")
+    gdev_artifact_path = portable_path(input_paths.gdev_artifact_path, namespace="gdev-artifact")
+    runtime_report_path = portable_path(result.report_path, namespace="runtime-report")
     lines = [
         "# Full Stack Runtime Proof",
         "",
         f"grid_run_id: {result.run_id}",
         f"candidate_id: {input_paths.candidate_id}",
         f"proof_mode: {input_paths.proof_mode}",
-        f"eval_lab_dataset_path: {input_paths.eval_lab_dataset_path}",
-        f"eval_lab_report_path: {input_paths.eval_lab_report_path}",
-        f"gdev_artifact_path: {input_paths.gdev_artifact_path}",
+        f"eval_lab_dataset_path: {eval_dataset_path}",
+        f"eval_lab_report_path: {eval_report_path}",
+        f"gdev_artifact_path: {gdev_artifact_path}",
         f"selected_cases: {len(result.selected_case_ids)}",
         "",
         "## Cross-Project Links",
         "",
-        f"- Eval Lab quality report: `{input_paths.eval_lab_report_path}`",
-        f"- gdev-agent artifact path: `{input_paths.gdev_artifact_path}`",
-        f"- Grid runtime report: `{result.report_path}`",
+        f"- Eval Lab quality report: `{eval_report_path}`",
+        f"- gdev-agent artifact path: `{gdev_artifact_path}`",
+        f"- Grid runtime report: `{runtime_report_path}`",
         f"- Grid run ID: `{result.run_id}`",
         "",
         "## Selected Cases",
@@ -252,6 +283,10 @@ def render_full_stack_report(result: FullStackProofResult) -> str:
     return "\n".join(lines)
 
 
+def _file_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 async def run_full_stack_from_urls(
     *,
     database_url: str = DEFAULT_DATABASE_URL,
@@ -264,7 +299,7 @@ async def run_full_stack_from_urls(
     artifact_root: Path,
     report_path: Path,
     candidate_id: str = DEFAULT_CANDIDATE_ID,
-    clean_state: bool = True,
+    clean_state: bool = False,
     live_local_gdev: LiveLocalGdevConfig | None = None,
 ) -> FullStackProofResult:
     engine = create_async_engine(database_url)
@@ -280,6 +315,7 @@ async def run_full_stack_from_urls(
     )
     try:
         if clean_state:
+            require_safe_local_reset(database_url)
             lock_connection = await engine.connect()
             await lock_connection.execute(text("SELECT pg_advisory_lock(7400)"))
             async with engine.begin() as connection:
@@ -321,6 +357,10 @@ def full_stack_command(
     ),
     database_url: Annotated[str, typer.Option("--database-url")] = DEFAULT_DATABASE_URL,
     redis_url: Annotated[str, typer.Option("--redis-url")] = DEFAULT_REDIS_URL,
+    reset_local_database: Annotated[
+        bool,
+        typer.Option("--reset-local-database", help="Drop and recreate only the local dev DB."),
+    ] = False,
 ) -> None:
     try:
         result = asyncio.run(
@@ -335,9 +375,10 @@ def full_stack_command(
                 candidate_id=candidate_id,
                 artifact_root=artifact_root,
                 report_path=report_path,
+                clean_state=reset_local_database,
             )
         )
-    except FullStackProofError as exc:
+    except (FullStackProofError, UnsafeDatabaseResetError) as exc:
         typer.echo(f"full-stack proof failed: {exc}", err=True)
         raise typer.Exit(code=1) from exc
 
@@ -363,7 +404,7 @@ async def run_full_stack_live_local_from_urls(
     gdev_tenant_slug: str,
     gdev_tenant_id: str,
     gdev_webhook_secret_env: str,
-    clean_state: bool = True,
+    clean_state: bool = False,
 ) -> FullStackProofResult:
     return await run_full_stack_from_urls(
         database_url=database_url,
@@ -410,6 +451,10 @@ def full_stack_live_local_command(
     ),
     database_url: Annotated[str, typer.Option("--database-url")] = DEFAULT_DATABASE_URL,
     redis_url: Annotated[str, typer.Option("--redis-url")] = DEFAULT_REDIS_URL,
+    reset_local_database: Annotated[
+        bool,
+        typer.Option("--reset-local-database", help="Drop and recreate only the local dev DB."),
+    ] = False,
 ) -> None:
     try:
         result = asyncio.run(
@@ -428,9 +473,10 @@ def full_stack_live_local_command(
                 gdev_tenant_slug=gdev_tenant_slug,
                 gdev_tenant_id=gdev_tenant_id,
                 gdev_webhook_secret_env=gdev_webhook_secret_env,
+                clean_state=reset_local_database,
             )
         )
-    except FullStackProofError as exc:
+    except (FullStackProofError, UnsafeDatabaseResetError) as exc:
         typer.echo(f"full-stack live-local proof failed: {exc}", err=True)
         raise typer.Exit(code=1) from exc
 

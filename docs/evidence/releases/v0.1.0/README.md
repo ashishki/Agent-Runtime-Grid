@@ -29,9 +29,15 @@ not be interpreted as capacity or SLO evidence.
 Verify the committed bytes from the repository root:
 
 ```bash
+PATH=.venv/bin:$PATH agent-runtime-grid verify-committed-evidence
 PATH=.venv/bin:$PATH agent-runtime-grid verify-evidence \
   --manifest docs/evidence/releases/v0.1.0/runtime-smoke.manifest.json
 ```
+
+The committed-evidence command additionally binds the exact manifest content
+address, clean source revision, 20-job lifecycle result, zero-cost stub boundary,
+and 20/20 recorded artifact-integrity result. The generic command remains useful
+for newly generated bundles.
 
 Expected manifest entries:
 
@@ -49,14 +55,22 @@ The original run used Python 3.12.3 on Linux x86_64 and the following command
 shape after starting the pinned Postgres and Redis Compose services:
 
 ```bash
+REPRO_DIR="$(mktemp -d)"
 PATH=.venv/bin:$PATH agent-runtime-grid smoke \
   --jobs 20 \
   --workers 4 \
   --mode stub \
   --reset-local-database \
-  --report docs/evidence/releases/v0.1.0/runtime-smoke.md
+  --artifact-root "$REPRO_DIR/artifacts" \
+  --report "$REPRO_DIR/runtime-smoke.md"
+PATH=.venv/bin:$PATH agent-runtime-grid verify-evidence \
+  --manifest "$REPRO_DIR/runtime-smoke.manifest.json"
 ```
 
-Run identifiers, timestamps, job identifiers, and timings are expected to
-change on reproduction. The verifier proves the committed run has not changed;
-the test suite and the runtime invariants determine whether a new run is valid.
+This reproduction path never overwrites the committed release directory. Remove
+`$REPRO_DIR` after review; run identifiers, timestamps, job identifiers, and
+timings are intentionally expected to differ.
+
+The committed verifier proves the published run has not changed; the generic
+verifier, test suite, and runtime invariants determine whether a new run is
+internally valid.

@@ -5,6 +5,11 @@ Versioning after its first tagged release.
 
 ## Unreleased
 
+- Bind the committed v0.1.0 evidence content address and release semantics to an
+  executable verifier and regression tests.
+- Keep release reproduction outputs outside the tracked canonical evidence
+  directory.
+
 ## 0.1.0 - 2026-07-13
 
 - Narrowed the supported surface to the local CLI/library runtime.

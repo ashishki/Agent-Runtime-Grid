@@ -115,6 +115,16 @@ content-addressed exception: it records a clean source revision, machine-readabl
 run data, the human-readable report, and a verifier manifest for a 20-job local
 stub smoke run.
 
+After local setup, verify that immutable release boundary directly:
+
+```bash
+PATH=.venv/bin:$PATH agent-runtime-grid verify-committed-evidence
+```
+
+This command checks the exact manifest content address and the published source,
+lifecycle, cost, and recorded artifact-integrity semantics. Reproduction writes
+new evidence outside the tracked release directory.
+
 Important evidence terms:
 
 - `idempotency replay` means the same submission key returned the existing job;

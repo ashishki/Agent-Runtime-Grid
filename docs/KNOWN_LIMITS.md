@@ -1,6 +1,6 @@
 # Known Limits - Agent Runtime Grid
 
-Last updated: 2026-06-14
+Last updated: 2026-07-13
 
 Agent Runtime Grid is a local-first T1 runtime. The project is intentionally scoped to prove queue-backed execution, durable lifecycle state, deterministic worker behavior, artifacts, logs, metrics, cost telemetry, and reliability reports for batches of AI or agent jobs.
 
@@ -38,13 +38,19 @@ v1 targets at-least-once delivery with idempotent finalization.
   deployment proof, and it expects `gdev-agent` to run in deterministic demo
   mode for reproducible no-model-cost evidence.
 - Failure-injection reports are generated from validated scenario evidence; remote chaos testing is not claimed.
+- The default Compose file starts Postgres and Redis only. API, worker-service,
+  Prometheus, and Grafana deployment claims are intentionally absent.
+- Reports have portable JSON and checksum manifests, but local files are not
+  immutable storage or third-party attestations.
+- No external user, production workload, throughput SLO, or design-partner
+  outcome is claimed.
 
 ## Local Runtime Boundary
 
 The runtime is local-first and T1:
 
 - Postgres and Redis run through Docker Compose.
-- Workers execute known job runners from the repository.
+- Proof commands start bounded in-process workers for known job runners.
 - Runtime containers do not install packages or mutate toolchains at job execution time.
 - External LLM and GitHub API calls are disabled unless explicitly configured and approved.
 - Default stub mode must remain zero model cost.
@@ -56,7 +62,7 @@ Before remote or trusted operation, the project would need:
 - stronger auth and deployment configuration
 - durable artifact storage beyond local filesystem
 - remote worker supervision and orchestration
-- backpressure and queue lag dashboards
+- a connected, tested metrics export and alerting deployment
 - explicit egress and secret allowlists per job type
 - production migration workflow
 - operational runbooks

@@ -1,241 +1,153 @@
 # Agent Runtime Grid
 
-Agent Runtime Grid is a local-first T1 runtime for executing batches of AI and agent jobs with queue-backed dispatch, durable state, bounded retries, timeouts, cancellation, idempotent finalization, artifacts, logs, metrics, cost telemetry, and reliability reports.
+Agent Runtime Grid is an alpha, local-first execution and reliability harness for
+batches of AI and agent jobs. Its control path is deterministic: Postgres owns
+lifecycle state, Redis Streams owns delivery state, and workers enforce bounded
+retry, timeout, cancellation, budget, artifact, and terminal-state rules.
 
-The project is built around a deterministic control plane. Scheduling, Redis Streams dispatch, Postgres-backed lifecycle state, retry policy, budget boundaries, and terminal state transitions are owned by code. Optional AI behavior belongs inside bounded sample job payloads, not inside runtime control decisions.
+This repository is the optional runtime component in the portfolio. It is not a
+hosted service, a production claim, or a dependency of Eval Ground Truth Lab.
 
-## Why This Exists
+## Start here: a five-minute local proof
 
-AI and agent workloads often start as one-off scripts. That breaks down when operators need to run many jobs, recover from partial failure, prove what happened, and compare reliability across runs.
-
-Agent Runtime Grid provides the execution layer for that shape of work:
-
-- submit many jobs as one run
-- dispatch through Redis Streams
-- process with bounded workers
-- persist lifecycle and event history in Postgres
-- retry transient failures
-- stop timed-out or cancelled work
-- prevent duplicate terminal finalization
-- write artifacts and reports
-- keep default execution in stub mode with zero model cost
-
-## What Works Today
-
-The current implementation proves the core runtime mechanics:
-
-- job submission and idempotency-key handling
-- Postgres job registry and append-only event log
-- Redis Streams publish, lease, acknowledge, and DLQ paths
-- worker lifecycle state transitions
-- transient retry and non-retryable policy failure handling
-- timeout and cancellation terminal paths
-- idempotent finalization with a database guard
-- JSON artifacts with input digests
-- sanitized structured job log records
-- runtime metrics and in-memory trace spans
-- queue and backpressure inspection
-- deterministic failure injection plans
-- cost telemetry records and rollup output
-- enforceable stub/live budget gates and strict cost rollup checks
-- batch CLI helpers and benchmark report rendering
-- Eval-Ground-Truth-Lab case execution through normal queue/workers
-- deterministic gdev-agent webhook evaluation jobs
-- full-stack artifact proof command that ingests ready Eval Lab and gdev-agent
-  artifacts, runs selected cases through Grid workers, and writes cross-linked
-  runtime evidence
-- failure-injection report pack generation
-- committed evidence snapshots under `docs/evidence/` for smoke, reliability,
-  failure-injection, and cross-project artifact proof surfaces
-- operator queue inspection, stale recovery, and pending lease renewal primitives
-- automated worker heartbeat renewal for active long-running jobs
-- bounded autonomous routine contract for manual, cron, webhook, and event
-  triggers without expanding Grid beyond T1 runtime responsibilities
-
-Current baseline: `80 passed` with one upstream FastAPI/Starlette deprecation warning.
-
-## Quickstart
-
-Create and activate a virtual environment, then install dependencies:
+Prerequisites: Python 3.12, Docker, and Docker Compose.
 
 ```bash
 python3 -m venv .venv
 PATH=.venv/bin:$PATH python -m pip install -e . -r requirements-dev.txt
-```
-
-Start local services:
-
-```bash
 docker-compose up -d postgres redis
-```
-
-Run the baseline:
-
-```bash
-PATH=.venv/bin:$PATH python -m pytest -q
-PATH=.venv/bin:$PATH ruff check
-PATH=.venv/bin:$PATH ruff format --check
-```
-
-Run the current smoke report harness:
-
-```bash
-PATH=.venv/bin:$PATH python -m pytest tests/load/test_benchmark_harness.py::test_smoke_benchmark_writes_report -q
-```
-
-Run the real 100-job smoke command:
-
-```bash
-PATH=.venv/bin:$PATH python -m agent_runtime_grid.cli smoke \
-  --jobs 100 \
+PATH=.venv/bin:$PATH agent-runtime-grid smoke \
+  --jobs 20 \
   --workers 4 \
-  --failure-rate 0 \
   --mode stub \
+  --reset-local-database \
   --report reports/smoke.md
 ```
 
-Run the real 500-job reliability proof:
+`--reset-local-database` is deliberately explicit. The command refuses to drop
+remote or unrelated databases. Do not point the proof commands at production
+infrastructure.
+
+Verify the implementation before trusting a report:
 
 ```bash
-PATH=.venv/bin:$PATH python -m agent_runtime_grid.cli benchmark v1-proof \
+PATH=.venv/bin:$PATH ruff check src tests
+PATH=.venv/bin:$PATH ruff format --check src tests
+PATH=.venv/bin:$PATH python -m pytest -q
+```
+
+## What is implemented
+
+- idempotent batch submission and Postgres lifecycle/event records;
+- Redis Streams publish, lease, acknowledge, retry, stale recovery, and DLQ paths;
+- bounded workers with timeout and cancellation terminal paths;
+- a database terminal-finalization guard;
+- separate persistent counts for rejected finalization attempts and actual
+  duplicate terminal-event invariant violations;
+- content-digested JSON artifacts and integrity checks;
+- deterministic failure injection and zero-cost stub execution;
+- cost records and enforceable budget boundaries;
+- queue/backpressure inspection and in-process metrics/traces;
+- smoke, reliability, failure-injection, Eval Lab, and gdev artifact proof paths.
+
+The default Compose file starts only the dependencies used by these paths:
+Postgres and Redis. Earlier placeholder `api`, `worker`, Prometheus, and Grafana
+services were removed because they did not run or observe the product.
+
+## Product boundary
+
+```text
+CLI or Python caller
+  -> Postgres job registry and append-only event history
+  -> Redis Streams delivery queue
+  -> bounded in-process worker pool
+  -> job adapter
+  -> artifacts + reliability evidence
+```
+
+The FastAPI module remains experimental library code and is not part of the
+default runnable surface. There is no long-running worker service contract yet.
+Metrics can be rendered in process; this repository does not claim a connected
+dashboard deployment.
+
+## Reliability proof
+
+The larger deterministic proof injects retry, timeout, and idempotency cases:
+
+```bash
+PATH=.venv/bin:$PATH agent-runtime-grid benchmark v1-proof \
   --jobs 500 \
   --workers 20 \
   --failure-rate 0.10 \
   --include-timeouts \
   --repeat-idempotency-submissions \
+  --reset-local-database \
   --report reports/v1/reliability_report.md
 ```
 
-The smoke and 500-job reliability proof commands now run end to end through local Redis Streams, workers, Postgres state, artifacts, and report validation.
+The proof uses stub jobs and reports an estimated model cost of zero. It is local
+reliability evidence, not load capacity or production SLO evidence.
 
-Run the cross-project artifact proof once Eval Lab and gdev-agent artifacts exist:
+## Relationship to the portfolio
 
-```bash
-PATH=.venv/bin:$PATH python -m agent_runtime_grid.cli proof full-stack \
-  --eval-lab-dataset ../Eval-Ground-Truth-Lab/datasets/gdev_agent/triage_v1.jsonl \
-  --eval-lab-report ../Eval-Ground-Truth-Lab/reports/gdev-agent/baseline_report.md \
-  --gdev-artifact ../gdev-agent/eval/results/last_run.json \
-  --jobs 20 \
-  --workers 4 \
-  --report reports/full-stack/runtime_report.md
-```
+- [Eval Ground Truth Lab](https://github.com/ashishki/Eval-Ground-Truth-Lab)
+  owns datasets, comparison, and release gates. Runtime Grid is optional.
+- [gdev-agent](https://github.com/ashishki/gdev-agent) is one reference workload;
+  its own repository owns tenant isolation, application behavior, and quality.
+- AI Workflow Playbook is a governance companion, not a runtime dependency.
+- The planned `ai-workflow-reliability-lab` umbrella pins compatible component
+  releases; it does not absorb this repository or its history.
 
-This submits selected Eval Lab/gdev cases as normal Grid jobs, dispatches them
-through Redis Streams, completes them with workers, writes artifacts and
-Eval-compatible result JSON, then renders one report linking quality evidence
-and runtime reliability evidence. This is `full-stack-artifact-proof`: it uses
-ready artifacts and deterministic jobs by default. It does not call live
-gdev-agent over HTTP.
+Cross-project artifact proof commands are documented in
+[`docs/INTEGRATIONS.md`](docs/INTEGRATIONS.md). They consume explicitly supplied
+local artifacts and do not prove a hosted integration.
 
-Optionally run the live-local proof against a locally running `gdev-agent` in
-deterministic demo mode. The webhook secret is read from the named environment
-variable; it is not stored in the job payload or report:
+## Evidence and interpretation
 
-```bash
-PATH=.venv/bin:$PATH python -m agent_runtime_grid.cli proof full-stack-live-local \
-  --eval-lab-dataset ../Eval-Ground-Truth-Lab/datasets/gdev_agent/triage_v1.jsonl \
-  --eval-lab-report ../Eval-Ground-Truth-Lab/reports/gdev-agent/baseline_report.md \
-  --gdev-artifact ../gdev-agent/eval/results/last_run.json \
-  --gdev-base-url http://localhost:8000 \
-  --gdev-webhook-secret-env GDEV_AGENT_WEBHOOK_SECRET \
-  --jobs 20 \
-  --workers 4 \
-  --report reports/full-stack/live_local_runtime_report.md
-```
+Generated reports live under `reports/` and are ignored by default. Curated
+snapshots under [`docs/evidence/`](docs/evidence/) show report shape, while the
+[`evidence index`](docs/EVIDENCE_INDEX.md) states how to reproduce them. A
+committed snapshot is illustrative until its command, source revision, inputs,
+and checksums are independently verified.
 
-## Architecture
+Important evidence terms:
 
-The runtime path is:
+- `idempotency replay` means the same submission key returned the existing job;
+- `finalization conflict attempt` means the DB guard rejected a competing
+  terminal write;
+- `duplicate terminal event` means an invariant violation and must remain zero;
+- `artifact integrity` validates recorded bytes, not the semantic quality of an
+  agent response.
 
-```text
-API / CLI
-  -> Postgres job registry and event log
-  -> Redis Streams queue
-  -> worker runtime
-  -> job runner
-  -> artifact store
-  -> metrics, traces, and reports
-```
+## Known limits
 
-Core references:
+Runtime Grid is not:
 
-- `docs/ARCHITECTURE.md` - canonical architecture and runtime boundaries
-- `docs/ARCHITECTURE_DIAGRAM.md` - compact runtime and evidence-flow diagram
-- `docs/STACK_OVERVIEW.md` - three-project stack map and live/artifact proof split
-- `docs/CASE_STUDY.md` - concise reliability and integration case study
-- `docs/EVIDENCE_INDEX.md` - evidence and verification pointers
-- `docs/KNOWN_LIMITS.md` - known limits and non-goals
-- `docs/SECURITY_BOUNDARIES.md` - API auth and local bind safety rules
-- `docs/OBSERVABILITY.md` - queue/backpressure metrics and report definitions
-- `docs/INTEGRATIONS.md` - Eval Lab and gdev-agent integration boundaries
-- `docs/OPERATIONS.md` - local operator commands for queue inspection and stale recovery
-- `docs/AUTONOMOUS_ROUTINE_CONTRACT.md` - bounded routine trigger/runtime contract
-- `docs/TRIGGER_SECURITY.md` - cron/webhook/event/manual trigger security boundaries
-- `reports/README.md` - report locations and expectations
-- `docs/evidence/` - committed evidence snapshots for generated report surfaces
+- a hosted or multi-tenant SaaS;
+- a Kubernetes, Temporal, or Ray replacement;
+- exactly-once execution;
+- a production sandbox for untrusted arbitrary code;
+- a general autonomous-agent framework;
+- evidence of customer traffic, production scale, or an external user.
 
-## Operational Guarantees
+The current supported boundary is a local CLI/library proof with Postgres,
+Redis, deterministic adapters, and inspectable evidence. See
+[`docs/KNOWN_LIMITS.md`](docs/KNOWN_LIMITS.md) for the longer list.
 
-Current local guarantees:
+## Open-source scope
 
-- durable job lifecycle state is Postgres-authoritative
-- Redis Streams is treated as delivery state, not final lifecycle authority
-- terminal state changes are guarded by idempotent finalization
-- default stub execution makes no paid model calls
-- secrets and raw job payloads must not appear in logs, metrics, traces, or committed config
-- health is public and secret-free
-- non-health API routes require `API_TOKEN` when configured
-- no-token API mode is allowed only on localhost bindings
-- stub mode blocks provider calls and live dispatch requires explicit budgets
-- local mode stays inside T1 Docker Compose boundaries
+The project is licensed under Apache-2.0. The direct dependency and service
+license review is recorded in [`docs/LICENSE_REVIEW.md`](docs/LICENSE_REVIEW.md).
+Contributions are intentionally limited to reproducible runtime defects,
+bounded adapters, evidence verification, and documentation corrections; see
+[`CONTRIBUTING.md`](CONTRIBUTING.md) and [`SECURITY.md`](SECURITY.md).
 
-Current proof coverage:
+## Reference documents
 
-- T16 real 100-job smoke command - implemented
-- T17 real 500-job reliability proof - implemented
-- T18 worker crash and stale lease recovery - implemented
-- T19 backpressure and queue lag metrics - implemented
-- T20 API auth and local boundary proof - implemented
-- T21 artifact integrity in reports - implemented
-- T22 cost budget gates - implemented
-- T23 Eval-Ground-Truth-Lab integration - implemented
-- T24 gdev-agent batch simulation - implemented
-- T25 failure-injection report pack - implemented
-- T29 cross-project runtime proof - implemented
-- T31 full-stack live-local proof - implemented
-
-## Reports
-
-Reports are written under `reports/`. Generated report contents are ignored by
-git so local benchmark output does not churn history. Stable placeholders,
-report documentation, and curated committed snapshots under `docs/evidence/`
-are committed for inspection.
-
-Evidence index: `docs/EVIDENCE_INDEX.md`.
-
-Report guide: `reports/README.md`.
-
-Committed snapshots:
-
-- `docs/evidence/runtime-smoke-100.md`
-- `docs/evidence/runtime-reliability-500.md`
-- `docs/evidence/full-stack-artifact-proof.md`
-- `docs/evidence/full-stack-live-local.md`
-- `docs/evidence/failure-injection-pack-summary.md`
-
-## Known Limits
-
-The current known limits are intentional and documented in `docs/KNOWN_LIMITS.md`.
-
-Short version:
-
-- not a Temporal replacement
-- not a Ray replacement
-- not a Kubernetes replacement
-- not a production sandbox for arbitrary untrusted code
-- not a SaaS or multi-tenant billing system
-- not an autonomous swarm
-- not exactly-once execution
-- not a general scheduler for arbitrary unbounded routines
-
-The v1 target is narrower: local-first reliability evidence for many AI and agent jobs under queue, worker, retry, timeout, cancellation, artifact, cost, and reporting controls.
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+- [`docs/ARCHITECTURE_DIAGRAM.md`](docs/ARCHITECTURE_DIAGRAM.md)
+- [`docs/EVIDENCE_INDEX.md`](docs/EVIDENCE_INDEX.md)
+- [`docs/OPERATIONS.md`](docs/OPERATIONS.md)
+- [`docs/SECURITY_BOUNDARIES.md`](docs/SECURITY_BOUNDARIES.md)
+- [`docs/OBSERVABILITY.md`](docs/OBSERVABILITY.md)
+- [`reports/README.md`](reports/README.md)

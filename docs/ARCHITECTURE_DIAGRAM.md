@@ -1,102 +1,58 @@
-# Architecture Diagram
-
-## Runtime Path
+# Architecture diagram
 
 ```text
-                           +---------------------+
-                           | API / CLI           |
-                           | submit, status,     |
-                           | smoke, benchmark,   |
-                           | failure reports     |
-                           +----------+----------+
-                                      |
-                                      v
-                           +---------------------+
-                           | Postgres            |
-                           | jobs, events,       |
-                           | finalizations, cost |
-                           +----------+----------+
-                                      |
-                                      v
-                           +---------------------+
-                           | Redis Streams       |
-                           | queue, pending,     |
-                           | consumer lag, DLQ   |
-                           +----------+----------+
-                                      |
-                                      v
-                           +---------------------+
-                           | workers             |
-                           | lease, timeout,     |
-                           | cancel, retry,      |
-                           | stale recovery      |
-                           +----------+----------+
-                                      |
-                 +--------------------+--------------------+
-                 |                    |                    |
-                 v                    v                    v
-       +----------------+    +----------------+    +----------------+
-       | stub jobs      |    | eval_lab_case  |    | gdev_webhook_ |
-       | deterministic  |    | Eval-Ground-  |    | eval           |
-       | local runner   |    | Truth-Lab      |    | gdev-agent     |
-       |                |    | integration    |    | integration    |
-       +-------+--------+    +-------+--------+    +-------+--------+
-               |                     |                     |
-               +---------------------+---------------------+
-                                     |
-                                     v
-                           +---------------------+
-                           | artifacts           |
-                           | path, SHA-256,      |
-                           | size, input digest, |
-                           | attempt metadata    |
-                           +----------+----------+
-                                      |
-                                      v
-                           +---------------------+
-                           | reports             |
-                           | smoke, 500-job,     |
-                           | failure injection,  |
-                           | artifact proof,     |
-                           | cost rollup         |
-                           +---------------------+
+                    supported caller
+                  CLI / Python library
+                          |
+                          v
+                +-------------------+
+                | Postgres          |
+                | jobs + events     |
+                | terminal guard    |
+                | conflict attempts |
+                +---------+---------+
+                          |
+                          v
+                +-------------------+
+                | Redis Streams     |
+                | delivery + leases |
+                | lag + DLQ         |
+                +---------+---------+
+                          |
+                          v
+                +-------------------+
+                | bounded workers   |
+                | timeout + retry   |
+                | cancellation      |
+                +---------+---------+
+                          |
+              +-----------+-----------+
+              |           |           |
+              v           v           v
+          stub jobs   Eval adapter  gdev adapter
+              |           |           |
+              +-----------+-----------+
+                          |
+                          v
+                artifacts + SHA-256
+                          |
+                          v
+             Markdown + JSON + manifest
+                          |
+                          v
+                 strict local verifier
 ```
 
-## Evidence Flow
+Authority boundaries:
 
-```text
-Eval-Ground-Truth-Lab cases
-  -> eval_lab_case jobs
-  -> Redis Streams
-  -> workers
-  -> runtime artifacts
-  -> Eval Lab result path cross-link
-  -> reliability reports
+| Concern | Authority |
+|---|---|
+| Lifecycle and terminal state | Postgres |
+| Delivery and pending state | Redis Streams |
+| Runtime policy | Deterministic Python code |
+| Evaluation release decision | Eval Ground Truth Lab |
+| Workload behavior/isolation | Workload repository |
+| Evidence bytes | Local bundle plus SHA-256 manifest |
 
-gdev-agent webhook cases
-  -> gdev_webhook_eval jobs
-  -> Redis Streams
-  -> workers
-  -> sanitized response artifacts
-  -> Eval Lab-compatible result path
-  -> reliability reports
-
-Full-stack artifact proof
-  -> ready Eval Lab dataset/report paths
-  -> ready gdev-agent artifact path
-  -> selected gdev_webhook_eval jobs
-  -> runtime artifacts and report cross-links
-  -> optional live-local proof remains separate
-```
-
-## Authority Boundaries
-
-| Area | Authority |
-|------|-----------|
-| Lifecycle state | Postgres jobs and event log |
-| Delivery state | Redis Streams pending and consumer-group state |
-| Terminal finalization | Postgres finalization guard |
-| Queue/backpressure metrics | Redis Streams plus Postgres event timing |
-| Artifacts | Local artifact store with integrity metadata |
-| Reports | Generated from runtime state and validated scenario evidence |
-| Cost gates | Budget policy plus strict cost rollup |
+The API module, remote workers, dashboards, and hosted execution are outside the
+supported diagram because they are not default runnable product surfaces.

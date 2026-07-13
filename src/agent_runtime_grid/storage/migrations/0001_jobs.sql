@@ -35,6 +35,16 @@ CREATE TABLE job_finalizations (
     created_at timestamptz NOT NULL DEFAULT now()
 );
 
+CREATE TABLE finalization_conflict_attempts (
+    id bigserial PRIMARY KEY,
+    job_id uuid NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+    run_id uuid NOT NULL,
+    attempted_status varchar(32) NOT NULL,
+    attempted_event_type varchar(64) NOT NULL,
+    trace_id varchar(128) NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+
 CREATE TABLE artifacts (
     id bigserial PRIMARY KEY,
     job_id uuid NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,

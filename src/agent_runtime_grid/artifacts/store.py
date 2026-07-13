@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Self
 
 from agent_runtime_grid.domain.jobs import JobRecord, payload_sha256
+from agent_runtime_grid.evidence import portable_artifact_path
 
 
 @dataclass(frozen=True)
@@ -111,6 +112,7 @@ class ArtifactStore:
             _upsert_eval_result_cross_link(
                 eval_result_path=Path(eval_result_path),
                 artifact_path=artifact_path,
+                job_id=str(job.id),
                 artifact_payload=artifact_payload or {},
             )
 
@@ -172,6 +174,7 @@ def _upsert_eval_result_cross_link(
     *,
     eval_result_path: Path,
     artifact_path: Path,
+    job_id: str,
     artifact_payload: dict[str, Any],
 ) -> None:
     eval_result_path.parent.mkdir(parents=True, exist_ok=True)
@@ -186,7 +189,7 @@ def _upsert_eval_result_cross_link(
         {
             "case_id": artifact_payload.get("case_id"),
             "quality_status": artifact_payload.get("quality_status"),
-            "runtime_artifact_path": str(artifact_path),
+            "runtime_artifact_path": portable_artifact_path(job_id=job_id, path=artifact_path),
         }
     )
     eval_result_path.write_text(json.dumps(result, sort_keys=True, indent=2), encoding="utf-8")

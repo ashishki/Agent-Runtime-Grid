@@ -23,12 +23,17 @@ from agent_runtime_grid.artifacts.store import (
 )
 from agent_runtime_grid.cli.benchmark import ReliabilityReport, render_reliability_report
 from agent_runtime_grid.domain.jobs import JobSubmission
+from agent_runtime_grid.evidence import write_evidence_bundle
 from agent_runtime_grid.queue.inspection import inspect_queue_backpressure
 from agent_runtime_grid.queue.redis_streams import RedisStreamsQueue
 from agent_runtime_grid.queue.types import QueueJobMessage
-from agent_runtime_grid.storage.finalization import duplicate_finalization_metric_value
+from agent_runtime_grid.storage.finalization import (
+    duplicate_terminal_event_count,
+    finalization_conflict_attempt_count,
+)
 from agent_runtime_grid.storage.models import job_events_table, jobs_table, metadata
 from agent_runtime_grid.storage.repositories import JobRepository
+from agent_runtime_grid.storage.safety import UnsafeDatabaseResetError, require_safe_local_reset
 from agent_runtime_grid.worker.loop import Worker
 
 TERMINAL_STATUSES = frozenset({"completed", "failed", "timed_out", "cancelled"})
@@ -101,8 +106,19 @@ async def run_smoke(
     )
     validate_smoke_report(report, expected_jobs=jobs)
 
-    report_path.parent.mkdir(parents=True, exist_ok=True)
-    report_path.write_text(render_reliability_report(report), encoding="utf-8")
+    write_evidence_bundle(
+        report_path=report_path,
+        rendered_report=render_reliability_report(report),
+        report=report,
+        command="smoke",
+        config={
+            "jobs": jobs,
+            "workers": workers,
+            "failure_rate": failure_rate,
+            "mode": mode,
+            "artifact_root": artifact_root,
+        },
+    )
     return SmokeRunResult(run_id=run_id, report_path=report_path, report=report)
 
 
@@ -148,7 +164,7 @@ async def run_smoke_from_urls(
     mode: str = "stub",
     artifact_root: Path = Path("artifacts"),
     report_path: Path = Path("reports/smoke.md"),
-    clean_state: bool = True,
+    clean_state: bool = False,
 ) -> SmokeRunResult:
     engine = create_async_engine(database_url)
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
@@ -163,6 +179,7 @@ async def run_smoke_from_urls(
     )
     try:
         if clean_state:
+            require_safe_local_reset(database_url)
             lock_connection = await engine.connect()
             await lock_connection.execute(text("SELECT pg_advisory_lock(7400)"))
             async with engine.begin() as connection:
@@ -234,6 +251,8 @@ async def build_smoke_report(
             .order_by(job_events_table.c.id.asc())
         )
         event_rows = event_result.mappings().all()
+        duplicate_finalizations = await duplicate_terminal_event_count(session, run_id=run_id)
+        conflict_attempts = await finalization_conflict_attempt_count(session, run_id=run_id)
 
     events_by_job: dict[UUID, list[dict[str, object]]] = defaultdict(list)
     for row in event_rows:
@@ -315,7 +334,8 @@ async def build_smoke_report(
         submitted_jobs=submitted_jobs,
         lifecycle_counts=lifecycle_counts,
         completion_rate=completion_rate,
-        duplicate_finalization_count=duplicate_finalization_metric_value(),
+        duplicate_finalization_count=duplicate_finalizations,
+        finalization_conflict_attempt_count=conflict_attempts,
         retry_count=retry_count,
         queue_lag_seconds=(
             backpressure.p95_queue_wait_seconds if backpressure else _p95(queue_waits)
@@ -327,7 +347,7 @@ async def build_smoke_report(
         failure_classification=dict(failure_classification),
         estimated_cost_usd=Decimal("0"),
         run_id=str(run_id),
-        source=f"runtime_state:{artifact_root}",
+        source=f"runtime_state:{artifact_root.name}",
         backpressure=backpressure,
         artifact_integrity=ArtifactIntegritySummary(
             checked_count=len(artifact_rows),
@@ -377,6 +397,10 @@ def smoke_command(
     artifact_root: Annotated[Path, typer.Option("--artifact-root")] = Path("artifacts"),
     database_url: Annotated[str, typer.Option("--database-url")] = DEFAULT_DATABASE_URL,
     redis_url: Annotated[str, typer.Option("--redis-url")] = DEFAULT_REDIS_URL,
+    reset_local_database: Annotated[
+        bool,
+        typer.Option("--reset-local-database", help="Drop and recreate only the local dev DB."),
+    ] = False,
 ) -> None:
     try:
         result = asyncio.run(
@@ -389,9 +413,15 @@ def smoke_command(
                 mode=mode,
                 artifact_root=artifact_root,
                 report_path=report_path,
+                clean_state=reset_local_database,
             )
         )
-    except (ArtifactIntegrityError, SmokeValidationError, ValueError) as exc:
+    except (
+        ArtifactIntegrityError,
+        SmokeValidationError,
+        UnsafeDatabaseResetError,
+        ValueError,
+    ) as exc:
         typer.echo(f"smoke failed: {exc}", err=True)
         raise typer.Exit(code=1) from exc
 

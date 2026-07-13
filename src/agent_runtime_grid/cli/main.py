@@ -13,6 +13,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from agent_runtime_grid.domain.jobs import JobSubmission
+from agent_runtime_grid.evidence import EvidenceVerificationError, verify_evidence_manifest
 from agent_runtime_grid.queue.redis_streams import RedisStreamsQueue
 from agent_runtime_grid.queue.types import QueueJobMessage
 from agent_runtime_grid.storage.models import job_events_table, jobs_table
@@ -201,6 +202,18 @@ def cleanup_command(
         reports_root=reports_root,
     ):
         typer.echo(f"removed: {removed}")
+
+
+@app.command("verify-evidence")
+def verify_evidence_command(
+    manifest: Annotated[Path, typer.Option("--manifest")],
+) -> None:
+    try:
+        verify_evidence_manifest(manifest)
+    except EvidenceVerificationError as exc:
+        typer.echo(f"evidence verification failed: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(f"verified: {manifest}")
 
 
 from agent_runtime_grid.cli.benchmark import benchmark_app  # noqa: E402

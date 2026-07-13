@@ -183,7 +183,7 @@ async def test_eval_lab_case_runs_and_writes_cross_linked_artifact(
     assert artifact["runtime_attempts"] == 1
     assert artifact["attempt_count"] == 1
     assert artifact["latency_ms"] >= 0
-    assert eval_result["runtime_artifact_path"] == str(artifact_path)
+    assert eval_result["runtime_artifact_path"] == f"artifact://{job.id}/{artifact_path.name}"
 
 
 @pytest.mark.asyncio
@@ -218,9 +218,9 @@ async def test_runtime_and_eval_reports_cross_link_without_fixed_checkout(
     eval_result_path = tmp_path / "eval-results" / "candidate-local" / "case-1.json"
     eval_result = json.loads(eval_result_path.read_text(encoding="utf-8"))
 
-    assert f"path={artifact_path}" in rendered_report
+    assert f"path=artifact://{job.id}/{artifact_path.name}" in rendered_report
     assert "eval_result_path=eval-results/candidate-local/case-1.json" in rendered_report
-    assert eval_result["runtime_artifact_path"] == str(artifact_path)
+    assert eval_result["runtime_artifact_path"] == f"artifact://{job.id}/{artifact_path.name}"
     assert "/home/ashishki/Documents/dev/ai-stack/projects/Eval-Ground-Truth-Lab" not in (
         rendered_report + json.dumps(eval_result, sort_keys=True)
     )

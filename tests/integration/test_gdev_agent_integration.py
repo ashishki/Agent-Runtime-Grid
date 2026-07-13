@@ -278,10 +278,10 @@ async def test_gdev_runtime_and_eval_outputs_cross_link(
     eval_result = json.loads(eval_result_path.read_text(encoding="utf-8"))
 
     assert "gdev-case-002" in artifact_path.read_text(encoding="utf-8")
-    assert f"path={artifact_path}" in rendered_report
+    assert f"path=artifact://{job.id}/{artifact_path.name}" in rendered_report
     assert "eval_result_path=eval-results/gdev-agent-local/gdev-case-002.json" in rendered_report
     assert eval_result["case_id"] == "gdev-case-002"
-    assert eval_result["runtime_artifact_path"] == str(artifact_path)
+    assert eval_result["runtime_artifact_path"] == f"artifact://{job.id}/{artifact_path.name}"
 
 
 @pytest.mark.asyncio

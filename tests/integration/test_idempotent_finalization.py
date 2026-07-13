@@ -13,9 +13,9 @@ from agent_runtime_grid.domain.jobs import JobRecord, JobSubmission
 from agent_runtime_grid.queue.redis_streams import RedisStreamsQueue
 from agent_runtime_grid.queue.types import QueueJobMessage
 from agent_runtime_grid.storage.finalization import (
-    duplicate_finalization_metric_value,
+    duplicate_terminal_event_count,
+    finalization_conflict_attempt_count,
     finalize_job,
-    reset_duplicate_finalization_metric_for_tests,
 )
 from agent_runtime_grid.storage.models import (
     job_events_table,
@@ -124,6 +124,16 @@ async def _finalization_count(session_factory: async_sessionmaker[AsyncSession])
     return count
 
 
+async def _finalization_guard_counts(
+    session_factory: async_sessionmaker[AsyncSession],
+) -> tuple[int, int]:
+    async with session_factory() as session:
+        return (
+            await finalization_conflict_attempt_count(session),
+            await duplicate_terminal_event_count(session),
+        )
+
+
 async def _finalize_once(
     session_factory: async_sessionmaker[AsyncSession],
     job: JobRecord,
@@ -151,8 +161,10 @@ async def test_racing_workers_produce_one_terminal_event(
     )
 
     assert [result.finalized for result in results].count(True) == 1
+    assert [result.conflict_recorded for result in results].count(True) == 1
     assert await _terminal_event_count(session_factory) == 1
     assert await _finalization_count(session_factory) == 1
+    assert await _finalization_guard_counts(session_factory) == (1, 0)
 
 
 @pytest.mark.asyncio
@@ -180,11 +192,10 @@ async def test_replayed_message_after_finalization_is_noop(
 
 
 @pytest.mark.asyncio
-async def test_duplicate_finalization_metric_stays_zero(
+async def test_replayed_worker_message_does_not_reach_finalization_guard(
     session_factory: async_sessionmaker[AsyncSession],
     queue: RedisStreamsQueue,
 ) -> None:
-    reset_duplicate_finalization_metric_for_tests()
     job = await _create_job(session_factory)
     message = QueueJobMessage(
         job_id=str(job.id),
@@ -201,4 +212,4 @@ async def test_duplicate_finalization_metric_stays_zero(
     assert await worker.process_one() is True
 
     assert await _terminal_event_count(session_factory) == 1
-    assert duplicate_finalization_metric_value() == 0
+    assert await _finalization_guard_counts(session_factory) == (0, 0)

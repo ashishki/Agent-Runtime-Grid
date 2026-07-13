@@ -220,8 +220,8 @@ async def test_full_stack_report_cross_links_quality_and_runtime_evidence(
 
     assert "# Full Stack Runtime Proof" in rendered_report
     assert f"grid_run_id: {result.run_id}" in rendered_report
-    assert f"Eval Lab quality report: `{eval_report_path}`" in rendered_report
-    assert f"gdev-agent artifact path: `{gdev_artifact_path}`" in rendered_report
+    assert "Eval Lab quality report: `eval-report://baseline_report.md`" in rendered_report
+    assert "gdev-agent artifact path: `gdev-artifact://last_run.json`" in rendered_report
     assert "## Runtime Reliability" in rendered_report
     assert "## artifact integrity" in rendered_report
     assert "## queue/backpressure" in rendered_report
@@ -229,6 +229,7 @@ async def test_full_stack_report_cross_links_quality_and_runtime_evidence(
     assert "gdev-billing-refund-001" in rendered_report
     assert "secret-value" not in rendered_report
     assert "api_token" not in rendered_report
+    assert str(tmp_path) not in rendered_report
 
 
 @pytest.mark.asyncio

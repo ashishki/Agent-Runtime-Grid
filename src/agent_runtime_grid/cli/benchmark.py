@@ -18,6 +18,7 @@ from agent_runtime_grid.artifacts.store import (
     ArtifactStore,
 )
 from agent_runtime_grid.domain.jobs import JobSubmission
+from agent_runtime_grid.evidence import portable_path, write_evidence_bundle
 from agent_runtime_grid.jobs.failure_injection import (
     FailureMode,
     FailurePlan,
@@ -28,6 +29,7 @@ from agent_runtime_grid.queue.redis_streams import RedisStreamsQueue
 from agent_runtime_grid.queue.types import QueueJobMessage
 from agent_runtime_grid.storage.models import metadata
 from agent_runtime_grid.storage.repositories import JobRepository
+from agent_runtime_grid.storage.safety import UnsafeDatabaseResetError, require_safe_local_reset
 from agent_runtime_grid.worker.loop import Worker
 
 DEFAULT_DATABASE_URL = (
@@ -77,6 +79,7 @@ class ReliabilityReport:
     queue_lag_seconds: float
     p95_duration_seconds: float
     artifact_completeness: float
+    finalization_conflict_attempt_count: int = 0
     failure_classification: dict[str, int] = field(default_factory=dict)
     estimated_cost_usd: Decimal = Decimal("0")
     run_id: str | None = None
@@ -150,6 +153,7 @@ def render_reliability_report(report: ReliabilityReport) -> str:
             "## reliability fields",
             f"- completion rate: {report.completion_rate:.2%}",
             f"- duplicate-finalization count: {report.duplicate_finalization_count}",
+            f"- finalization conflict attempts: {report.finalization_conflict_attempt_count}",
             f"- retry count: {report.retry_count}",
             f"- timeout count: {report.lifecycle_counts.get('timed_out', 0)}",
             f"- DLQ count: {report.lifecycle_counts.get('dlq', 0)}",
@@ -186,10 +190,13 @@ def render_reliability_report(report: ReliabilityReport) -> str:
                 f"sha256={row.sha256} "
                 f"input_digest={row.input_digest} "
                 f"created_at={row.created_at.isoformat()} "
-                f"path={row.path}"
+                f"path=artifact://{row.job_id}/{row.path.name}"
             )
             if row.eval_result_path is not None:
-                artifact_line = f"{artifact_line} eval_result_path={row.eval_result_path}"
+                artifact_line = (
+                    f"{artifact_line} eval_result_path="
+                    f"{portable_path(row.eval_result_path, namespace='eval-result')}"
+                )
             lines.append(artifact_line)
     lines.append("")
 
@@ -283,6 +290,7 @@ async def run_reliability_proof(
         lifecycle_counts=report.lifecycle_counts,
         completion_rate=report.completion_rate,
         duplicate_finalization_count=report.duplicate_finalization_count,
+        finalization_conflict_attempt_count=report.finalization_conflict_attempt_count,
         retry_count=report.retry_count,
         queue_lag_seconds=report.queue_lag_seconds,
         p95_duration_seconds=report.p95_duration_seconds,
@@ -312,8 +320,21 @@ async def run_reliability_proof(
         repeat_idempotency_submissions=repeat_idempotency_submissions,
     )
 
-    report_path.parent.mkdir(parents=True, exist_ok=True)
-    report_path.write_text(render_reliability_report(report), encoding="utf-8")
+    write_evidence_bundle(
+        report_path=report_path,
+        rendered_report=render_reliability_report(report),
+        report=report,
+        command="benchmark v1-proof",
+        config={
+            "jobs": jobs,
+            "workers": workers,
+            "failure_rate": failure_rate,
+            "include_timeouts": include_timeouts,
+            "repeat_idempotency_submissions": repeat_idempotency_submissions,
+            "artifact_root": artifact_root,
+        },
+        seed=seed,
+    )
     return ReliabilityProofResult(
         run_id=run_id,
         report_path=report_path,
@@ -333,7 +354,7 @@ async def run_reliability_proof_from_urls(
     repeat_idempotency_submissions: bool = True,
     artifact_root: Path = Path("artifacts"),
     report_path: Path = Path("reports/v1/reliability_report.md"),
-    clean_state: bool = True,
+    clean_state: bool = False,
 ) -> ReliabilityProofResult:
     engine = create_async_engine(database_url)
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
@@ -348,6 +369,7 @@ async def run_reliability_proof_from_urls(
     )
     try:
         if clean_state:
+            require_safe_local_reset(database_url)
             lock_connection = await engine.connect()
             await lock_connection.execute(text("SELECT pg_advisory_lock(7400)"))
             async with engine.begin() as connection:
@@ -479,6 +501,10 @@ def v1_proof_command(
     artifact_root: Annotated[Path, typer.Option("--artifact-root")] = Path("artifacts"),
     database_url: Annotated[str, typer.Option("--database-url")] = DEFAULT_DATABASE_URL,
     redis_url: Annotated[str, typer.Option("--redis-url")] = DEFAULT_REDIS_URL,
+    reset_local_database: Annotated[
+        bool,
+        typer.Option("--reset-local-database", help="Drop and recreate only the local dev DB."),
+    ] = False,
 ) -> None:
     try:
         result = asyncio.run(
@@ -492,9 +518,15 @@ def v1_proof_command(
                 repeat_idempotency_submissions=repeat_idempotency_submissions,
                 artifact_root=artifact_root,
                 report_path=report_path,
+                clean_state=reset_local_database,
             )
         )
-    except (ArtifactIntegrityError, ReliabilityProofValidationError, ValueError) as exc:
+    except (
+        ArtifactIntegrityError,
+        ReliabilityProofValidationError,
+        UnsafeDatabaseResetError,
+        ValueError,
+    ) as exc:
         typer.echo(f"v1 proof failed: {exc}", err=True)
         raise typer.Exit(code=1) from exc
 

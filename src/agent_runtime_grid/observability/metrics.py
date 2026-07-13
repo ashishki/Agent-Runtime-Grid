@@ -90,7 +90,12 @@ class RuntimeMetrics:
         )
         self.duplicate_finalization_total = Counter(
             "agent_runtime_grid_duplicate_finalization_total",
-            "Actual duplicate terminal finalization defects.",
+            "Actual duplicate terminal-event invariant violations.",
+            registry=self.registry,
+        )
+        self.finalization_conflict_attempt_total = Counter(
+            "agent_runtime_grid_finalization_conflict_attempt_total",
+            "Terminal finalization attempts rejected by the database guard.",
             registry=self.registry,
         )
         self.artifact_total = Counter(
@@ -140,6 +145,7 @@ def required_metric_names() -> set[str]:
         "agent_runtime_grid_failure_total",
         "agent_runtime_grid_dlq_total",
         "agent_runtime_grid_duplicate_finalization_total",
+        "agent_runtime_grid_finalization_conflict_attempt_total",
         "agent_runtime_grid_artifact_total",
         "agent_runtime_grid_estimated_cost_usd",
     }

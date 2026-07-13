@@ -28,9 +28,9 @@ def test_ci_has_required_gates() -> None:
     job = _test_job()
     steps = job["steps"]
 
-    assert any(step.get("uses") == "actions/checkout@v4" for step in steps)
+    assert any(step.get("uses") == "actions/checkout@v5" for step in steps)
 
-    setup_python = next(step for step in steps if step.get("uses") == "actions/setup-python@v5")
+    setup_python = next(step for step in steps if step.get("uses") == "actions/setup-python@v6")
     assert setup_python["with"]["python-version"] == "3.12"
 
     install = _step_named(steps, "Install dependencies")
@@ -52,7 +52,10 @@ def test_ci_service_env_matches_runtime_contract() -> None:
     postgres = job["services"]["postgres"]
     redis = job["services"]["redis"]
 
-    assert postgres["image"].startswith("postgres:16")
+    assert postgres["image"] == (
+        "postgres:16.14-alpine3.24@sha256:"
+        "57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777"
+    )
     assert "pg_isready" in postgres["options"]
     assert postgres["ports"] == ["5432:5432"]
     assert postgres["env"] == {
@@ -61,7 +64,10 @@ def test_ci_service_env_matches_runtime_contract() -> None:
         "POSTGRES_DB": "agent_runtime_grid_test",
     }
 
-    assert redis["image"].startswith("redis:7")
+    assert redis["image"] == (
+        "redis:7.2.14-alpine3.21@sha256:"
+        "dfa18828cbc07b3ae6a95ec7343f6c214fdee2d836197b4be8e9904420762cd8"
+    )
     assert "redis-cli ping" in redis["options"]
     assert redis["ports"] == ["6379:6379"]
 

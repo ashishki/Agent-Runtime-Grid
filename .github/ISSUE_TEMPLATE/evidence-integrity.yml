@@ -1,0 +1,26 @@
+name: Evidence integrity defect
+description: Report a checksum, manifest, report, or claim-verification mismatch.
+title: "[evidence] "
+labels: ["evidence"]
+body:
+  - type: textarea
+    id: artifact
+    attributes:
+      label: Artifact and revision
+      description: Identify the artifact, source revision, and command that produced it.
+    validations:
+      required: true
+  - type: textarea
+    id: mismatch
+    attributes:
+      label: Verification mismatch
+      description: Show expected versus observed hashes or semantics without private data.
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Claim impact
+      description: State exactly which conclusion is no longer supported.
+    validations:
+      required: true

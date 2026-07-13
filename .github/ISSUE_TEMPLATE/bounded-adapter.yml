@@ -1,0 +1,35 @@
+name: Bounded adapter proposal
+description: Propose one deterministic job adapter without expanding the control plane.
+title: "[adapter] "
+labels: ["adapter"]
+body:
+  - type: input
+    id: owner
+    attributes:
+      label: Workflow owner and public contract
+      description: Link to the independently owned workflow or fixture contract.
+    validations:
+      required: true
+  - type: textarea
+    id: boundary
+    attributes:
+      label: Adapter boundary
+      description: Define input, output, timeout, retry, cost, and redaction behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Proposed evidence
+      description: Describe deterministic fixtures, failure cases, and verification.
+    validations:
+      required: true
+  - type: checkboxes
+    id: non_goals
+    attributes:
+      label: Scope agreement
+      options:
+        - label: This proposal does not add a new scheduler or hosted control plane.
+          required: true
+        - label: Model output will not control retry, budget, or terminal-state policy.
+          required: true

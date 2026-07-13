@@ -14,14 +14,17 @@ def _load_compose() -> dict[str, Any]:
 def test_required_services_declared() -> None:
     compose = _load_compose()
 
-    assert set(compose["services"]) >= {
-        "api",
-        "worker",
-        "postgres",
-        "redis",
-        "prometheus",
-        "grafana",
-    }
+    assert set(compose["services"]) == {"postgres", "redis"}
+    assert compose["services"]["postgres"]["image"] == (
+        "postgres:16.14-alpine3.24@sha256:"
+        "57c72fd2a128e416c7fcc499958864df5301e940bca0a56f58fddf30ffc07777"
+    )
+    assert compose["services"]["redis"]["image"] == (
+        "redis:7.2.14-alpine3.21@sha256:"
+        "dfa18828cbc07b3ae6a95ec7343f6c214fdee2d836197b4be8e9904420762cd8"
+    )
+    assert compose["services"]["postgres"]["ports"] == ["127.0.0.1:5432:5432"]
+    assert compose["services"]["redis"]["ports"] == ["127.0.0.1:6379:6379"]
 
 
 def test_compose_does_not_commit_real_secret_markers() -> None:

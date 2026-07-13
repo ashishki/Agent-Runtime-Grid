@@ -1,0 +1,23 @@
+{
+  "review_date": "2026-07-13",
+  "project_license": "Apache-2.0",
+  "python_dependencies": {
+    "alembic": "MIT",
+    "asyncpg": "Apache-2.0",
+    "fastapi": "MIT",
+    "opentelemetry-api": "Apache-2.0",
+    "opentelemetry-sdk": "Apache-2.0",
+    "prometheus-client": "Apache-2.0 AND BSD-2-Clause",
+    "pydantic": "MIT",
+    "pydantic-settings": "MIT",
+    "redis": "MIT",
+    "sqlalchemy": "MIT",
+    "typer": "MIT",
+    "uvicorn": "BSD-3-Clause"
+  },
+  "services": {
+    "postgres:16.14-alpine3.24": "PostgreSQL License; image packaging MIT",
+    "redis:7.2.14-alpine3.21": "BSD-3-Clause"
+  },
+  "status": "compatible"
+}

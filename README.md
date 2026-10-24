@@ -8,6 +8,12 @@ retry, timeout, cancellation, budget, artifact, and terminal-state rules.
 This repository is the optional runtime component in the portfolio. It is not a
 hosted service, a production claim, or a dependency of Eval Ground Truth Lab.
 
+**Stage reviewed on 24 October 2026:** experimental local CLI/library runtime.
+See the [evidence index](docs/EVIDENCE_INDEX.md) for versioned checks.
+
+A representative run submits a batch, lets workers claim jobs, injects a timeout
+or retry, and inspects the resulting lifecycle records and artifacts.
+
 ## Start here: a five-minute local proof
 
 Prerequisites: Python 3.12, Docker, and Docker Compose.
@@ -95,7 +101,7 @@ reliability evidence, not load capacity or production SLO evidence.
 - [gdev-agent](https://github.com/ashishki/gdev-agent) is one reference workload;
   its own repository owns tenant isolation, application behavior, and quality.
 - AI Workflow Playbook is a governance companion, not a runtime dependency.
-- The planned `ai-workflow-reliability-lab` umbrella pins compatible component
+- The published [AI Workflow Reliability Lab](https://github.com/ashishki/ai-workflow-reliability-lab) umbrella pins compatible component
   releases; it does not absorb this repository or its history.
 
 Cross-project artifact proof commands are documented in
